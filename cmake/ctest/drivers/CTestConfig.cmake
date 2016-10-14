@@ -60,3 +60,9 @@ set(CTEST_DROP_METHOD "http")
 set(CTEST_DROP_SITE "testing.sandia.gov")
 set(CTEST_DROP_LOCATION "/cdash/submit.php?project=TrilinosDriver")
 set(CTEST_DROP_SITE_CDASH TRUE)
+
+# Temp secondary submit to experimental CDash site (see Trilinos TRIL-79)
+SET_DEFAULT_AND_FROM_ENV(TDD_2ND_CTEST_DROP_SITE
+  "testing.sandia.gov")
+SET_DEFAULT_AND_FROM_ENV(TDD_2ND_CTEST_DROP_LOCATION
+  "/extended/cdash/submit.php?project=TrilinosDriver")
