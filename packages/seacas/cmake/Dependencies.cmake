@@ -11,11 +11,11 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Suplib      libraries/suplib        PT  REQUIRED
   SuplibC     libraries/suplib_c      PT  REQUIRED
   SuplibCpp   libraries/suplib_cpp    PT  REQUIRED
-  SVDI        libraries/svdi          PT  OPTIONAL
-  PLT         libraries/plt           PT  OPTIONAL
+  SVDI        libraries/svdi          ST  OPTIONAL
+  PLT         libraries/plt           ST  OPTIONAL
   Algebra     applications/algebra    PT  REQUIRED
   Aprepro     applications/aprepro    PT  REQUIRED
-  Blot        applications/blot       PT  OPTIONAL
+  Blot        applications/blot       ST  OPTIONAL
   Conjoin     applications/conjoin    PT  REQUIRED
   Ejoin       applications/ejoin      PT  REQUIRED
   Epu         applications/epu        PT  REQUIRED
@@ -25,7 +25,7 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Exotxt      applications/exotxt     PT  REQUIRED
   Exo_format  applications/exo_format PT  REQUIRED
   Ex1ex2v2    applications/ex1ex2v2   PT  OPTIONAL
-  Fastq       applications/fastq      PT  OPTIONAL
+  Fastq       applications/fastq      ST  OPTIONAL
   Gjoin       applications/gjoin      PT  REQUIRED
   Gen3D       applications/gen3d      PT  REQUIRED
   Genshell    applications/genshell   PT  REQUIRED
