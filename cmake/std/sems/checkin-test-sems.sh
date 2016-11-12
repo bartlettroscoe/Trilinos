@@ -38,13 +38,13 @@ if [ "$TRILINOS_DIR" == "" ] ; then
   _SCRIPT_DIR=`dirname $_ABS_FILE_PATH`
   TRILINOS_DIR=$_SCRIPT_DIR/../../..
 fi
-
-TRILINOS_DIR_ABS=$(readlink -f $TRILINOS_DIR)
-echo "TRILINOS_DIR_ABS = $TRILINOS_DIR_ABS"
+# ToDo: Update the above so that it looks for the standard directory
+# structures ../../Trilinos or .. by default so that it will work on OSX
+# without having to set TRILINOS_DIR
 
 # Make sure the right env is loaded!
 export TRILINOS_SEMS_DEV_ENV_VERBOSE=1
-source $TRILINOS_DIR_ABS/cmake/load_ci_sems_dev_env.sh
+source $TRILINOS_DIR/cmake/load_ci_sems_dev_env.sh
 
 #
 # B) Set up the bulid configurations
