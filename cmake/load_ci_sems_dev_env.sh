@@ -20,7 +20,7 @@ source $_SCRIPT_DIR/std/sems/get_default_modules.sh
 if [ "$PLATFORM_TYPE" == "Linux" ] ; then
   DEFAULT_CI_SEMS_COMPILER=sems-gcc/4.7.2
 elif [ "$PLATFORM_TYPE" == "Darwin" ] ; then
-  DEFAULT_CI_SEMS_COMPILER=sems-gcc/4.7.2
+  DEFAULT_CI_SEMS_COMPILER=sems-gcc/5.3.0
 else
   echo "ERROR, unknown platform type '$DEFAULT_CI_SEMS_COMPILER'!"
   exit 1
