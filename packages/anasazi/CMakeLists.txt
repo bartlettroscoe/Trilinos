@@ -51,14 +51,21 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # ${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT and
 # ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE.  See Trilinos GitHub #362.
 
-IF (${PACKAGE_NAME}_ENABLE_COMPLEX
-  AND (NOT Teuchos_ENABLE_COMPLEX OR NOT Tpetra_INST_COMPLEX_DOUBLE)
+IF (${PACKAGE_NAME}_ENABLE_COMPLEX AND NOT Teuchos_ENABLE_COMPLEX)
+  MESSAGE(FATAL_ERROR
+    "Error: ${PACKAGE_NAME}_ENABLE_COMPLEX='${${PACKAGE_NAME}_ENABLE_COMPLEX}' "
+    " and Teuchos_ENABLE_COMPLEX='${Teuchos_ENABLE_COMPLEX}'.  This would result in"
+    " a build or link-time failure so we have to abort.")
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_COMPLEX AND
+  ${PACKAGE_NAME}_ENABLE_Tpetra AND NOT Tpetra_INST_COMPLEX_DOUBLE
   )
   MESSAGE(FATAL_ERROR
     "Error: ${PACKAGE_NAME}_ENABLE_COMPLEX='${${PACKAGE_NAME}_ENABLE_COMPLEX}',"
-    " Teuchos_ENABLE_COMPLEX='${Teuchos_ENABLE_COMPLEX}', and"
-    " Tpetra_INST_COMPLEX_DOUBLE='${Tpetra_INST_COMPLEX_DOUBLE}'.  This would result in"
-    " a build or link-time failure so we have to abort.")
+    " ${PACKAGE_NAME}_ENABLE_Tpetra='${${PACKAGE_NAME}_ENABLE_Tpetra}',"
+    " and Tpetra_INST_COMPLEX_DOUBLE='${Tpetra_INST_COMPLEX_DOUBLE}' ."
+    "  This would result in a build or link-time failure so we have to abort.")
 ENDIF()
 
 # Kokkos includes an implementation of the Tall Skinny QR (TSQR)

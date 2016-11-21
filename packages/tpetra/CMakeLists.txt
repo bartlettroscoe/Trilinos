@@ -595,11 +595,11 @@ ENDIF ()
 
 # Decide whether to instantiate / test Scalar = std::complex<float> and/or
 # std::complex<double> by default.  Both require a complex-arithmetic BLAS
-# provied by Teuchos.  Furthermore, std::complex<T> requires the corresponding
+# provided by Teuchos.  Furthermore, std::complex<T> requires the corresponding
 # Scalar=T instantiation to be ON.
 #
 # The decision to enable or disable std::complex<T> instantiations is also
-# controled by Trilinos-level configure options.
+# controlled by Trilinos-level configure options.
 # mfh 18 Aug 2015: Teuchos currently doesn't even define
 # HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
 # Thanks to Andrew Bradley for pointing this out.
