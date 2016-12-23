@@ -73,7 +73,7 @@ namespace Thyra {
  * therefore use shorter names.
  *
  * Second, there are some protected nested classes (i.e. <tt>InArgsSetup</tt>
- * and <tt>OutArgsSetup</tt>0 that only subclasses should be able to access.
+ * and <tt>OutArgsSetup</tt>) that only subclasses should be able to access.
  * This makes the design very secure to help avoid bad usage of the nested
  * classes.
  *
@@ -157,24 +157,19 @@ public:
     void set_p( int l, const RCP<const VectorBase<Scalar> > &p_l );
     /** \brief Get <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
     RCP<const VectorBase<Scalar> > get_p(int l) const;
-
-
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot_mp)==true</tt>.  */
     void set_x_dot_mp( const RCP<const Stokhos::ProductEpetraVector > &x_dot_mp );
-    /** \brief Precondition: <tt>supports(IN_ARG_x_dotmp)==true</tt>.  */
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_mp)==true</tt>.  */
     RCP<const Stokhos::ProductEpetraVector > get_x_dot_mp() const;
-
     /** \brief Precondition: <tt>supports(IN_ARG_x_mp)==true</tt>.  */
     void set_x_mp( const RCP<const Stokhos::ProductEpetraVector > &x_mp );
     /** \brief Precondition: <tt>supports(IN_ARG_x_mp)==true</tt>.  */
     RCP<const Stokhos::ProductEpetraVector > get_x_mp() const;
-
+    /** \brief . */
     void set_p_mp( int l, const RCP<const Stokhos::ProductEpetraVector > &p_mp_l );
     RCP<const Stokhos::ProductEpetraVector > get_p_mp(int l) const;
     /** Whether p_mp is supported for parameter vector l */
     bool supports(EInArgs_p_mp arg, int l) const;
-
-
     /** \brief Precondition: <tt>supports(IN_ARG_t)==true</tt>.  */
     void set_t( ScalarMag t );
     /** \brief .Precondition: <tt>supports(IN_ARG_t)==true</tt>  */
@@ -255,16 +250,21 @@ public:
 
   /** \brief The type of an evaluation. */
   enum EEvalType {
-    EVAL_TYPE_EXACT = 0, /// Do an exact evaluation (default)
-    EVAL_TYPE_APPROX_DERIV, /// An approx. eval. for a F.D. deriv.
-    EVAL_TYPE_VERY_APPROX_DERIV /// An approx. eval. for a F.D. prec.
+    /** \brief Do an exact evaluation (default). */
+    EVAL_TYPE_EXACT = 0,
+    /** \brief Do an approximate evaluation for a finite-difference detivative
+     * (e.g. for finite-difference Jacobian-vector product). */
+    EVAL_TYPE_APPROX_DERIV,
+    /** \brief Do a very approximate evaluation for a finite-difference
+     * detivative (e.g. for finite-difference Jacobian preconditioner). */
+    EVAL_TYPE_VERY_APPROX_DERIV
   };
 
   /** \brief Type to embed evaluation accuracy with an RCP-managed object.
    *
    * This type derives from Teuchos::RCP and therefore is a drop in
-   * replacement for an RCP object as it implicitly converts to an from such a
-   * type.
+   * replacement for an RCP object as it implicitly converts to and from such
+   * a type.
    */
   template<class ObjType>
   class Evaluation : public RCP<ObjType> {
@@ -288,13 +288,25 @@ public:
    private:
     EEvalType evalType_;
   };
+  // NOTE: using derivation from RCP for this above class is not great C++
+  // design because it allows for copy construction slicing and the inability
+  // to dynamically manage with a pointer and do deletion correctly but for
+  // this particular class, this is pretty safe.  If slicing is done from an
+  // Evaluation to an RCP, all that one loses is the EEvalType enum value
+  // (which likely will not be used in that context anyway).  And there should
+  // never be a need for a type like this to be dynamically allocated so the
+  // lack of virtual destructor is not very dangerous.
 
   /** \brief . */
   enum EDerivativeMultiVectorOrientation {
-    DERIV_MV_JACOBIAN_FORM, ///< Jacobian form DhDz (nz columns of h_space vectors)
-    DERIV_MV_GRADIENT_FORM, ///< Gradient form DhDz^T (nh columns of z_space vectors)
-    DERIV_MV_BY_COL = DERIV_MV_JACOBIAN_FORM, ///< Deprecated!
-    DERIV_TRANS_MV_BY_ROW = DERIV_MV_GRADIENT_FORM ///< Deprecated!
+    /** \brief Jacobian form DhDz (nz columns of h_space vectors) */
+    DERIV_MV_JACOBIAN_FORM,
+    /** \brief Gradient form DhDz^T (nh columns of z_space vectors) */ 
+    DERIV_MV_GRADIENT_FORM,
+    /** \brief Deprecated! (use <tt>DERIV_MV_JACOBIAN_FORM</tt> instead) */
+    DERIV_MV_BY_COL = DERIV_MV_JACOBIAN_FORM,
+    /** \brief Deprecated! (use <tt>DERIV_MV_GRADIENT_FORM</tt> instead) */
+    DERIV_TRANS_MV_BY_ROW = DERIV_MV_GRADIENT_FORM
   };
 
   /** \brief . */
@@ -368,9 +380,16 @@ public:
   
   /** \brief . */
   enum EDerivativeLinearity {
-    DERIV_LINEARITY_UNKNOWN      ///< .
-    ,DERIV_LINEARITY_CONST       ///< .
-    ,DERIV_LINEARITY_NONCONST    ///< .
+    /** \brief The dependence of the derivative operator on its input
+     * variables for the underlying function is unknown (i.e. it may be
+     * constant or non-constant). */
+    DERIV_LINEARITY_UNKNOWN,
+    /** \brief The derivative operator is constant and does not change based
+     * on the input varaibles for the underlying function. */
+    DERIV_LINEARITY_CONST,
+    /** \brief The derivative operator changes based on the value of one or
+        more of the input variables for the underlying function. */
+    DERIV_LINEARITY_NONCONST
   };
 
   /** \brief . */
@@ -728,11 +747,15 @@ public:
     void set_W( const RCP<LinearOpWithSolveBase<Scalar> > &W );
     /** \brief Precondition: <tt>supports(OUT_ARG_W)==true</tt>.  */
     RCP<LinearOpWithSolveBase<Scalar> > get_W() const;
-
+    /** \brief . */
     const DerivativeSupport& supports(EOutArgsDfDp_mp arg, int l) const;
+    /** \brief . */
     bool supports(EOutArgs_g_mp arg, int j) const;
+    /** \brief . */
     const DerivativeSupport& supports(EOutArgsDgDx_dot_mp arg, int j) const;
+    /** \brief . */
     const DerivativeSupport& supports(EOutArgsDgDx_mp arg, int j) const;
+    /** \brief . */
     const DerivativeSupport& supports(EOutArgsDgDp_mp arg, int j, int l) const;
     /** \brief Precondition: <tt>supports(OUT_ARG_f_mp)==true</tt>.  */
     void set_f_mp( const RCP<Stokhos::ProductEpetraVector> &f_mp );
@@ -746,7 +769,6 @@ public:
     void set_W_mp( const RCP<Stokhos::ProductEpetraOperator> &W_mp );
     /** \brief Precondition: <tt>supports(OUT_ARG_W_mp)==true</tt>.  */
     RCP<Stokhos::ProductEpetraOperator> get_W_mp() const;
-
     /** \brief Precondition: <tt>supports(OUT_ARG_W_op)==true</tt>.  */
     void set_W_op( const RCP<LinearOpBase<Scalar> > &W_op );
     /** \brief Precondition: <tt>supports(OUT_ARG_W_op)==true</tt>.  */
