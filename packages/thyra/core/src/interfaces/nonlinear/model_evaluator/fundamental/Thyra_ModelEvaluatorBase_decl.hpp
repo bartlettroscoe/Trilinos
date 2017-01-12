@@ -90,17 +90,17 @@ public:
 
   /** \brief .  */
   enum EInArgsMembers {
-    IN_ARG_x_dot ///< .
-    ,IN_ARG_x ///< .
-    ,IN_ARG_x_dot_poly ///< .
-    ,IN_ARG_x_poly ///< .
-    ,IN_ARG_x_dot_mp ///< .
-    ,IN_ARG_x_mp ///< .
-    ,IN_ARG_t ///< .
-    ,IN_ARG_alpha ///< .
-    ,IN_ARG_beta ///< .
-    ,IN_ARG_step_size///< .
-    ,IN_ARG_stage_number///< .
+    IN_ARG_x_dot, ///< Basic canonical model.
+    IN_ARG_x, ///< Basic canonical model.
+    IN_ARG_t, ///< Basic canonical model.
+    IN_ARG_alpha, ///< Basic canonical model first derivatives.
+    IN_ARG_beta, ///< Basic canonical model first derivatives.
+    IN_ARG_x_dot_mp, ///< Stokhos multi-point evaluation.
+    IN_ARG_x_mp, ///< Stokhos multi-point evaluation.
+    IN_ARG_x_dot_poly, // Tailor polynomials in time
+    IN_ARG_x_poly, // Tailor polynomials in time
+    IN_ARG_step_size, ///< Step control.
+    IN_ARG_stage_number ///< Step control.
   };
   /** \brief .  */
   static const int NUM_E_IN_ARGS_MEMBERS=11;
@@ -123,73 +123,14 @@ public:
   template<class Scalar>
   class InArgs : public Teuchos::Describable {
   public:
+
+    /** \name Constructors and common members */
+    //@{
+
     /** \brief .  */
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
-    /** \brief .  */
+    /** \brief Default uninitialized construct.  */
     InArgs();
-    /** \brief Return the number of parameter subvectors <tt>p(l)</tt>
-     * supported (<tt>Np >= 0</tt>).  */
-    int Np() const;
-    /** \brief Determines if an input argument is supported or not.  */
-    bool supports(EInArgsMembers arg) const;
-    /** \brief Precondition: <tt>supports(IN_ARG_x_dot)==true</tt>.  */
-    void set_x_dot( const RCP<const VectorBase<Scalar> > &x_dot );
-    /** \brief Precondition: <tt>supports(IN_ARG_x_dot)==true</tt>.  */
-    RCP<const VectorBase<Scalar> > get_x_dot() const;
-    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    void set_x( const RCP<const VectorBase<Scalar> > &x );
-    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    RCP<const VectorBase<Scalar> > get_x() const;
-
-#ifdef HAVE_THYRA_ME_POLYNOMIAL
-    /** \brief Precondition: <tt>supports(IN_ARG_x_poly)==true</tt>.  */
-    void set_x_poly( 
-      const RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly );
-    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_poly() const;
-    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_poly)==true</tt>.  */
-    void set_x_dot_poly(
-      const RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly );
-    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_poly)==true</tt>.  */
-    RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_dot_poly() const;
-#endif // HAVE_THYRA_ME_POLYNOMIAL
-    /** \brief Set <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
-    void set_p( int l, const RCP<const VectorBase<Scalar> > &p_l );
-    /** \brief Get <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
-    RCP<const VectorBase<Scalar> > get_p(int l) const;
-    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_mp)==true</tt>.  */
-    void set_x_dot_mp( const RCP<const Stokhos::ProductEpetraVector > &x_dot_mp );
-    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_mp)==true</tt>.  */
-    RCP<const Stokhos::ProductEpetraVector > get_x_dot_mp() const;
-    /** \brief Precondition: <tt>supports(IN_ARG_x_mp)==true</tt>.  */
-    void set_x_mp( const RCP<const Stokhos::ProductEpetraVector > &x_mp );
-    /** \brief Precondition: <tt>supports(IN_ARG_x_mp)==true</tt>.  */
-    RCP<const Stokhos::ProductEpetraVector > get_x_mp() const;
-    /** \brief . */
-    void set_p_mp( int l, const RCP<const Stokhos::ProductEpetraVector > &p_mp_l );
-    RCP<const Stokhos::ProductEpetraVector > get_p_mp(int l) const;
-    /** Whether p_mp is supported for parameter vector l */
-    bool supports(EInArgs_p_mp arg, int l) const;
-    /** \brief Precondition: <tt>supports(IN_ARG_t)==true</tt>.  */
-    void set_t( ScalarMag t );
-    /** \brief .Precondition: <tt>supports(IN_ARG_t)==true</tt>  */
-    ScalarMag get_t() const;
-    /** \brief Precondition: <tt>supports(IN_ARG_alpha)==true</tt>.  */
-    void set_alpha( Scalar alpha );
-    /** \brief Precondition: <tt>supports(IN_ARG_alph)==true</tt>.  */
-    Scalar get_alpha() const;
-    /** \brief Precondition: <tt>supports(IN_ARG_beta)==true</tt>.  */
-    void set_beta( Scalar beta );
-    /** \brief Precondition: <tt>supports(IN_ARG_beta)==true</tt>.  */
-    Scalar get_beta() const;
-    /** \brief Precondition: <tt>supports(IN_ARG_step_size)==true</tt>.  */
-    void set_step_size( Scalar step_size);
-    /** \brief Precondition: <tt>supports(IN_ARG_step_size)==true</tt>.  */
-    Scalar get_step_size() const;
-    /** \brief Precondition: <tt>supports(IN_ARG_stage_number)==true</tt>.  */
-    void set_stage_number( Scalar stage_number);
-    /** \brief Precondition: <tt>supports(IN_ARG_stage_number)==true</tt>.  */
-    Scalar get_stage_number() const;
     /** \brief Set non-null arguments (does not overwrite non-NULLs with
      * NULLs) .  */
     void setArgs(
@@ -207,7 +148,113 @@ public:
     void describe(
       Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
       ) const;
+
+    //@}
+
+    /** \name Basic canonical model */
+    //@{
+
+    /** \brief Return the number of parameter subvectors <tt>p(l)</tt>
+     * supported (<tt>Np >= 0</tt>).  */
+    int Np() const;
+    /** \brief Determines if an input argument is supported or not.  */
+    bool supports(EInArgsMembers arg) const;
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot)==true</tt>.  */
+    void set_x_dot( const RCP<const VectorBase<Scalar> > &x_dot );
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot)==true</tt>.  */
+    RCP<const VectorBase<Scalar> > get_x_dot() const;
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
+    void set_x( const RCP<const VectorBase<Scalar> > &x );
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
+    RCP<const VectorBase<Scalar> > get_x() const;
+    /** \brief Set <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
+    void set_p( int l, const RCP<const VectorBase<Scalar> > &p_l );
+    /** \brief Get <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
+    RCP<const VectorBase<Scalar> > get_p(int l) const;
+    /** \brief Precondition: <tt>supports(IN_ARG_t)==true</tt>.  */
+    void set_t( ScalarMag t );
+    /** \brief .Precondition: <tt>supports(IN_ARG_t)==true</tt>  */
+    ScalarMag get_t() const;
+
+    //@}
+
+    /** \name Basic canonical model first derivatives */
+    //@{
+
+    /** \brief Precondition: <tt>supports(IN_ARG_alpha)==true</tt>.  */
+    void set_alpha( Scalar alpha );
+    /** \brief Precondition: <tt>supports(IN_ARG_alph)==true</tt>.  */
+    Scalar get_alpha() const;
+    /** \brief Precondition: <tt>supports(IN_ARG_beta)==true</tt>.  */
+    void set_beta( Scalar beta );
+    /** \brief Precondition: <tt>supports(IN_ARG_beta)==true</tt>.  */
+    Scalar get_beta() const;
+
+    //@}
+
+    /** \name Basic canonical model second derivatives */
+    //@{
+
+    // ToDo: Add these!
+
+    //@}
+
+    /** \name Stokhos multi-point evaluation */
+    //@{
+
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_mp)==true</tt>.  */
+    void set_x_dot_mp( const RCP<const Stokhos::ProductEpetraVector > &x_dot_mp );
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_mp)==true</tt>.  */
+    RCP<const Stokhos::ProductEpetraVector > get_x_dot_mp() const;
+    /** \brief Precondition: <tt>supports(IN_ARG_x_mp)==true</tt>.  */
+    void set_x_mp( const RCP<const Stokhos::ProductEpetraVector > &x_mp );
+    /** \brief Precondition: <tt>supports(IN_ARG_x_mp)==true</tt>.  */
+    RCP<const Stokhos::ProductEpetraVector > get_x_mp() const;
+    /** \brief . */
+    void set_p_mp( int l, const RCP<const Stokhos::ProductEpetraVector > &p_mp_l );
+    RCP<const Stokhos::ProductEpetraVector > get_p_mp(int l) const;
+    /** Whether p_mp is supported for parameter vector l */
+    bool supports(EInArgs_p_mp arg, int l) const;
+
+    //@}
+
+    /** \name Tailor polynomials in time */
+    //@{
+
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+    /** \brief Precondition: <tt>supports(IN_ARG_x_poly)==true</tt>.  */
+    void set_x_poly( 
+      const RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly );
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
+    RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_poly() const;
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_poly)==true</tt>.  */
+    void set_x_dot_poly(
+      const RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly );
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_poly)==true</tt>.  */
+    RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_dot_poly() const;
+#endif // HAVE_THYRA_ME_POLYNOMIAL
+
+    //@}
+
+    /** \name Step control */
+    //@{
+
+    /** \brief Precondition: <tt>supports(IN_ARG_step_size)==true</tt>.  */
+    void set_step_size( Scalar step_size);
+    /** \brief Precondition: <tt>supports(IN_ARG_step_size)==true</tt>.  */
+    Scalar get_step_size() const;
+    /** \brief Precondition: <tt>supports(IN_ARG_stage_number)==true</tt>.  */
+    void set_stage_number( Scalar stage_number);
+    /** \brief Precondition: <tt>supports(IN_ARG_stage_number)==true</tt>.  */
+    Scalar get_stage_number() const;
+
+    //@}
+
   protected:
+
+    /** \name Protected members */
+    //@{
+
     /** \brief . */
     void _setModelEvalDescription( const std::string &modelEvalDescription );
     /** \brief . */
@@ -220,7 +267,11 @@ public:
     void _setSupports( const InArgs<Scalar>& inputInArgs, const int Np );
     /** \brief . */
     void _setUnsupportsAndRelated( EInArgsMembers arg );
+
+    //@}
+
   private:
+
     // types
     typedef Teuchos::Array<RCP<const VectorBase<Scalar> > > p_t;
     // data
@@ -246,13 +297,14 @@ public:
     void assert_supports(EInArgsMembers arg) const;
     void assert_supports(EInArgs_p_mp arg, int l) const;
     void assert_l(int l) const;
-  };
+
+  }; // end class InArgs
 
   /** \brief The type of an evaluation. */
   enum EEvalType {
     /** \brief Do an exact evaluation (default). */
     EVAL_TYPE_EXACT = 0,
-    /** \brief Do an approximate evaluation for a finite-difference detivative
+    /** \brief Do an approximate evaluation for a finite-difference derivative
      * (e.g. for finite-difference Jacobian-vector product). */
     EVAL_TYPE_APPROX_DERIV,
     /** \brief Do a very approximate evaluation for a finite-difference
@@ -385,7 +437,7 @@ public:
      * constant or non-constant). */
     DERIV_LINEARITY_UNKNOWN,
     /** \brief The derivative operator is constant and does not change based
-     * on the input varaibles for the underlying function. */
+     * on the input variables for the underlying function. */
     DERIV_LINEARITY_CONST,
     /** \brief The derivative operator changes based on the value of one or
         more of the input variables for the underlying function. */
@@ -568,8 +620,8 @@ public:
     Teuchos::Array<int> paramIndexes_;
   };
 
-  /** \brief Simple aggregate class that stores a derivative object
-   * as a general linear operator or as a multi-vector.
+  /** \brief Simple aggregate class that stores a Stokhos multi-point
+   * derivative object as a general linear operator or as a multi-vector.
    */
   class MPDerivative {
   public:
@@ -640,7 +692,7 @@ public:
     OUT_ARG_W_mp,  ///< .
     OUT_ARG_W_op,  ///< .
     OUT_ARG_W_prec, ///< .
-    OUT_ARG_f_poly  ///< .
+    OUT_ARG_f_poly  // Don't document
   };
   /** \brief .  */
   static const int NUM_E_OUT_ARGS_MEMBERS=7;
