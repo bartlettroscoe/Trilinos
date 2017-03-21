@@ -134,6 +134,16 @@ IF (TPL_ENABLE_MPI)
   # refuse to find the ParMETIS libraries.
 ENDIF()
 
+# yaml-cpp
+SEMS_SELECT_TPL_ROOT_DIR(YAML_CPP yaml-cpp_ROOT)
+#PRINT_VAR(yaml-cpp_ROOT)
+SET(TPL_yaml-cpp_INCLUDE_DIRS "${yaml-cpp_ROOT}/include"
+  CACHE PATH "Set in SEMSDevEnv.cmake")
+SET(yaml-cpp_LIBRARY_DIRS "${yaml-cpp_ROOT}/lib"
+  CACHE PATH "Set in SEMSDevEnv.cmake")
+SET(yaml-cpp_LIBRARY_NAMES "yaml-cpp"
+  CACHE STRING "Set in SEMSDevEnv.cmake")
+
 # Zlib
 SEMS_SELECT_TPL_ROOT_DIR(ZLIB Zlib_ROOT)
 #PRINT_VAR(Zlib_ROOT)

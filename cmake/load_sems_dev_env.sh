@@ -116,6 +116,7 @@ module load $sems_git_and_version_default
 module load $sems_compiler_and_version_load
 module load $sems_mpi_and_version_load
 module load $sems_boost_and_version_default
+module load $sems_yaml_cpp_and_version_default
 module load $sems_zlib_and_version_default
 module load $sems_hdf5_and_version_default
 module load $sems_netcdf_and_version_default
