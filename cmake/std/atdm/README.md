@@ -1,6 +1,6 @@
-# Building Trilinos for ATDM Machines
+# Building Trilinos on ATDM Machines
 
-This directory contains a set of configuration files scripts for setting up the env and configuring, building, and testing Trilinos for ATDM on a number of ATDM-related platforms.
+This directory contains a set of configuration files and scripts for setting up the env and configuring, building, and testing Trilinos for ATDM on a number of ATDM-related platforms.
 
 ## Local development workflow
 
@@ -21,19 +21,19 @@ export JOB_NAME=Drekar_opt_gnu_openmp
 
 This is a free-form field and certain keywords are searched for in this name to specify what gets built with the components:
 
-* Optimized or debug compilers options: `opt` or `debug`
-* Compilers: `gnu`, `intel`, or `cuda`
-* Backends: nothing '' (serial), `openmp`, or `cuda`
+* Compiler: `gnu`, `intel`, or `cuda`
+* Optimized or debug: `opt` or `debug`
+* Backend: nothing '' (serial), `openmp`, or `cuda`
 
-(Note you only need to specify cuda once and these keywords can be listed in any order in the `JOB_NAME`.)
+(Note you only need to specify `cuda` once and these keywords can be listed in any order in the `JOB_NAME`.)
 
 Then source the script:
 
 ```
-source <TrilinosBaseDir>/cmake/std/atdm/ALL/environment.sh
+source <TrilinosBaseDir>/cmake/std/atdm/environment.sh
 ```
 
-The above script will get the machine name from `hostname` and then load the right env for that machine. The loaded env vars will have the prefix `ATDM_` to not pollute the global env namespace.
+The above script will get the machine name from `hostname` and then load the right env for that machine. The loaded env vars will have the prefix `ATDM_` (i.e. so as to not pollute the global env namespace).
 
 ### 2) Configure Trilinos
 
@@ -55,7 +55,7 @@ ln -s <TrilinosBaseDir>/cmake/std/atdm/do-configure .
 ./do-configure [other cache vars]
 ```
 
-### 3) Build enable Trilinos packages
+### 3) Build enabled Trilinos packages
 
 ```
 cd <build_dir>/
@@ -73,7 +73,7 @@ To do this, run:
 
 ```
 cd <build_dir>/
-source <TrilinosBaseDir>/cmake/atdm/ALL/get_on_compute_nodes.sh
+source <TrilinosBaseDir>/cmake/atdm/get_on_compute_nodes.sh [number_of_nodes]
 ctest -j16
 ```
 
@@ -81,7 +81,7 @@ ctest -j16
 
 Setting up for automated builds of Trilinos for submitting to the Trilinos CDash site involves the key files:
 
-* `<TrilinosBaseDir>/cmake/std/atdm/ALL/environment.sh`
+* `<TrilinosBaseDir>/cmake/std/atdm/environment.sh`
 * `<TrilinosBaseDir>/cmake/std/atdm/ATDMConfig.cmake`
 
 The file `environment.sh` must be sourced in the other shell script that calls the `ctest -S <script>` command.  The file `ATDMConfig.cmake` is passing as part of the configure options for the automated build for the platform.  That last piece of information to set up an automated build is to specify what packages should be enabled and (additional) packages to be disabled.  ToDo: Specify how that is done!
