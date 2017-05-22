@@ -27,4 +27,4 @@ else
 fi
 
 source $_SCRIPT_DIR/load_sems_dev_env.sh \
-  $DEFAULT_CI_SEMS_COMPILER sems-openmpi/1.6.5 sems-cmake/3.5.2
+  $DEFAULT_CI_SEMS_COMPILER sems-openmpi/1.8.7 sems-cmake/3.5.2
