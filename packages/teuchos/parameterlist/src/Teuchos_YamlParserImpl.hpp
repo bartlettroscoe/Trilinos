@@ -44,10 +44,12 @@
 //
 // @HEADER
 
-#ifndef TEUCHOS_YAMLPARSER_DECL_H_
-#define TEUCHOS_YAMLPARSER_DECL_H_
+#ifndef TEUCHOS_YAMLPARSER_IMPL_H_
+#define TEUCHOS_YAMLPARSER_IMPL_H_
 
-#include "Teuchos_ParameterList.hpp"
+#include "yaml-cpp/yaml.h"
+
+#include "Teuchos_YamlParser_decl.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_PtrDecl.hpp"
@@ -61,28 +63,30 @@
 #include <cstdlib>
 #include <cstring>
 
-namespace Teuchos
+namespace Teuchos {
+
+//Class modeled after Teuchos::XMLParameterListReader
+namespace YAMLParameterList
 {
-
-#define MAKE_EXCEPTION_TYPE(Name) \
-class Name : public Teuchos::EceptionBase \
-{ \
-  public: \
-    Name(const std::string& arg) : ExceptionBase(arg) {} \
-};
-
-MAKE_EXCEPTION_TYPE(YamlKeyError)
-MAKE_EXCEPTION_TYPE(YamlScalarError)
-MAKE_EXCEPTION_TYPE(YamlSequenceError)
-MAKE_EXCEPTION_TYPE(YamlStructureError)
-MAKE_EXCEPTION_TYPE(YamlUndefinedNodeError)
-
-#undef MAKE_EXCEPTION_TYPE
-
-std::string convertXmlToYaml(const std::string& xmlFileName); //returns filename of produced YAML file
-void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFileName); //writes to given filename
-void convertXmlToYaml(std::istream& xmlStream, std::ostream& yamlStream);
-bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::ParameterList& rhs, bool verbose = false);
+  Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const std::string& text);
+  Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const char* text);
+  Teuchos::RCP<Teuchos::ParameterList> parseYamlFile(const std::string& yamlFile);
+  Teuchos::RCP<Teuchos::ParameterList> parseYamlStream(std::istream& yaml);
+  void writeYamlStream(std::ostream& yamlFile, const Teuchos::ParameterList& pl);
+  void writeYamlFile(const std::string& yamlFile, const Teuchos::ParameterList& pl);
+  Teuchos::RCP<Teuchos::ParameterList> readParams(std::vector<YAML::Node>& lists);
+  //load all k-v pairs within node into param list (checks if node is map, and handles nesting)
+  //topLevel means to put sub-pairs directly into parent and not create named sublists
+  void processMapNode(const YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel = false);
+  void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel = false);
+  //  template<typename T> Teuchos::Array<T> getYamlArray(const YAML::Node& node);
+  void writeParameterList(const Teuchos::ParameterList& pl, std::ostream& yaml, int indentLevel);
+  void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry& entry, std::ostream& yaml, int indentLevel);    //throws if the entry's type is not supported
+  void generalWriteString(const std::string& str, std::ostream& yaml);
+  void generalWriteDouble(double d, std::ostream& yaml);
+  bool stringNeedsQuotes(const std::string& str);
+  typedef Teuchos::ParameterList::ConstIterator PLIter;
+}
 
 } // namespace Teuchos
 

@@ -52,10 +52,13 @@
 #include <ios>
 #include <sstream>
 
-#include "Teuchos_YamlParser_decl.hpp"
+#include "yaml-cpp/yaml.h"
+
+#include "Teuchos_YamlParserImpl.hpp"
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
 #include "Teuchos_YamlParameterListCoreHelpers.hpp"
 #include "Teuchos_TwoDArray.hpp"
+
 
 namespace Teuchos
 {

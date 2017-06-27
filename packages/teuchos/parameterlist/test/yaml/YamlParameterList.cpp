@@ -44,6 +44,8 @@
 //
 // @HEADER
 
+// Only needed exception types!
+#include "yaml-cpp/yaml.h"
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_ScalarTraits.hpp>
