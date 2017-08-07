@@ -10,6 +10,9 @@ ENDMACRO()
 # Ignore warnings coming from TPL headers (see #1458)
 TRIL_SET_BOOL_CACHE_VAR_FOR_CI(${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS TRUE)
 
+# Get more testing with checked STL
+TRIL_SET_BOOL_CACHE_VAR_FOR_CI(${PROJECT_NAME}_ENABLE_CHECKED_STL ON)
+
 # Disable a bunch of TPLs that are not to be enabled in CI testing (since
 # the SEMS env does not have them).
 TRIL_SET_BOOL_CACHE_VAR_FOR_CI(TPL_ENABLE_GLM OFF)
