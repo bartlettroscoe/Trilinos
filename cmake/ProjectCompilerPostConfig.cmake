@@ -1,4 +1,8 @@
-IF(${Trilinos_ENABLE_Kokkos})
+IF (Trilinos_ENABLE_Kokkos AND "${KOKKOS_HOST_ARCH}" STREQUAL "")
+  message("-- "
+    "Skipping Kokkos configration setting because KOKKOS_HOST_ARCH='${KOKKOS_HOST_ARCH}'")
+
+ELSEIF (Trilinos_ENABLE_Kokkos)
 
   # This is where to generate the gen_kokkos.cmake and KokkosCore_config.h 
   # that we will use in the configuration
