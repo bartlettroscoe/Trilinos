@@ -41,6 +41,12 @@
 #ifndef   NOX_EXCEPTIONS_H
 #define   NOX_EXCEPTIONS_H
 
+#include "NOX_Config.h"
+#ifdef HAVE_NOX_THYRA
+#  include "Thyra_OperatorVectorTypes.hpp"
+#endif
+
+
 namespace NOX {
 namespace Exceptions {
 
@@ -49,12 +55,24 @@ namespace Exceptions {
 
     This class is a member of namespace NOX::Exceptions.
   */
-  class SolverFailure : public std::logic_error {
+  class SolverFailure :
+#ifdef HAVE_NOX_THYRA
+    public Thyra::Exceptions::LinearOpApplyFailed
+#else
+    public std::logic_error
+#endif
+  {
 
   public:
 
     //! Constructor.
-    SolverFailure(const std::string& what) : std::logic_error(what) {};
+    SolverFailure(const std::string& what) :
+#ifdef HAVE_NOX_THYRA
+      Thyra::Exceptions::LinearOpApplyFailed(what)
+#else
+      std::logic_error(what)
+#endif
+      {};
 
   }; // end of class SolverFailure
 
