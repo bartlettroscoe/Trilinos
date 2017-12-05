@@ -356,6 +356,13 @@ class OpNotSupported : public std::logic_error
 {public: OpNotSupported(const std::string& what_arg)
    : std::logic_error(what_arg) {}};
 
+/** \biref Thrown if Thyra::LinearOpBase::apply() fails.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+class LinearOpApplyFailed : public std::runtime_error
+{public: LinearOpApplyFailed(const std::string& what_arg)
+   : std::runtime_error(what_arg) {}};
 
 } // namespace Exceptions
 

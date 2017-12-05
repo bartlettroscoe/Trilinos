@@ -263,7 +263,9 @@ public:
    * 
    * <b>Preconditions:</b><ul>
    *
-   * <li> <tt>nonnull(this->domain()) && nonnull(this->range())</tt>
+   * <li> <tt>nonnull(this->domain()) && nonnull(this->range())</tt> (NOTE: In
+   * general aliasing can't be detected every time but it is exists, the
+   * result may be undefined.)
    *
    * <li> <tt>this->opSupported(M_trans)==true</tt> (throw
    * <tt>Exceptions::OpNotSupported</tt>)
@@ -285,8 +287,17 @@ public:
    * </ul>
    *
    * <b>Postconditions:</b><ul>
-   * <li> Is it not obvious?  After the function returns the multi-vector <tt>Y</tt>
-   *      is transformed as indicated above.
+   *
+   * <li> If preconditons are met and no numerical errors occur, then after
+   * the function returns the multi-vector <tt>Y</tt> is transformed as
+   * indicated above.
+   *
+   * <li> Otherwise, if the linear operator can't be applied due to some
+   * numerical error or other unanticipated error, then an exception of type
+   * <tt>Exceptions::LinearOpApplyFailed</tt> will be thrown.  In this case,
+   * the numerical values inside of <tt>*Y</tt> are undetermined (i.e., they
+   * could be anything including <tt>NaN</tt>).
+   *
    * </ul>
    */
   void apply(
