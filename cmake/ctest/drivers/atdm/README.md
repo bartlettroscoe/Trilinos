@@ -49,8 +49,8 @@ That directory contains a CTest -S driver script:
   Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
 ```
 
-The `atdm/ctest-driver.cmake` files sets any CMake or CTest options that are
-specific to that system.
+This files sets other CMake and CTest options that are pulled out of the env
+set by the `cmake/std/atdm/<system_name>/environment.sh` script.
 
 Given this file `atdm/ctest-driver.cmake`, then:
 
