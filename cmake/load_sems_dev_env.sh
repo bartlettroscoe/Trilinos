@@ -63,6 +63,9 @@
 # and load different modules for CMake, git, and Python since these are just
 # tools that don't depend on the selected compiler or MPI.
 #
+# NOTE: This also sets OMP_NUM_THREADS for an OpenMP build so that tests can
+# be run with ctest out of the blocks.
+#
 
 # Get the base dir for the sourced script
 called=$_
@@ -135,12 +138,21 @@ module load $sems_parmetis_and_version_default
 module load $sems_scotch_and_version_default
 module load $sems_superlu_and_version_default
 
+#
+# D) Set up for standard basic OpenMP build and running tests
+#
+
+export OMP_NUM_THREAD=2
+
 if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then
   module list
+  echo
+  echo "Set env vars:"
+  set | grep "^OMP_"
 fi
 
 #
-# D) Remember the loaded SEMS Dev Env
+# E) Remember the loaded SEMS Dev Env
 #
 
 export TRILINOS_SEMS_DEV_ENV_LOADED="$TRILINOS_SEMS_DEV_ENV_TO_LOAD"
