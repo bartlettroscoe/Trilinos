@@ -169,11 +169,11 @@ $ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
 
 ## Specific instructions for each system
 
-* <a href="#whiteride">white/ride</a>
-* <a href="#hansenshiller">hansen/shiller</a>
+* <a href="#ridewhite">ride/white</a>
+* <a href="#shillerhansen">shiller/hansen</a>
 
 
-### white/ride
+### ride/white
 
 Once logging on to `white` (on the SON) or `shiller` (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
@@ -215,7 +215,7 @@ $ srun ./checkin-test-sems.sh cuda-debug \
 ```
 
 
-### hansen/shiller
+### shiller/hansen
 
 Once logging on to `hansen` (on the SON) or `shiller` (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
