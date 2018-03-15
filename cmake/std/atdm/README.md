@@ -14,7 +14,7 @@ build locally as described below.
 
 **Outline:**
 * <a href="#quick-start">Quick-start</a>
-* <a href="#checkin-test-atdm.sh">checkin-test-atdm.sh</a>
+* <a href="#checkin-test-atdmsh">checkin-test-atdm.sh</a>
 * <a href="#specific-instructions-for-each-system">Specific instructions for each system</a>
 * <a href="#directory-structure-and-contents">Directory structure and contents</a>
 * <a href="#specific-systems-supported">Specific systems supported</a>
@@ -203,7 +203,7 @@ The ATDM configuration of Trilinos is set up to run on the Firestone nodes
 not work on the other GPU nodes currently.
 
 Note that one can also run the same build a tests using the <a
-href="#checkin-test-atdm.sh">checkin-test-atdm.sh</a> script as:
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
 $ cd <some_build_dir>/
@@ -242,7 +242,7 @@ $ srun ctest -j16
 ```
 
 Note that one can also run the same build a tests using the <a
-href="#checkin-test-atdm.sh">checkin-test-atdm.sh</a> script as:
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
 ```
 $ cd <some_build_dir>/
