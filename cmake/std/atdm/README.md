@@ -175,7 +175,7 @@ $ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
 
 ### ride/white
 
-Once logging on to `white` (on the SON) or `shiller` (on the SRN), one can
+Once logged on to `white` (on the SON) or `shiller` (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
 the node).  But to run the tests, one must run on the compute nodes using the
 `bsub` command to run if using a CUDA build.  For example, to configure, build
@@ -217,7 +217,7 @@ $ srun ./checkin-test-sems.sh cuda-debug \
 
 ### shiller/hansen
 
-Once logging on to `hansen` (on the SON) or `shiller` (on the SRN), one can
+Once logged on to `hansen` (on the SON) or `shiller` (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
 the node).  But to run the tests, one must run on the compute nodes using the
 `srun` command.  For example, to configure, build and run the tests for say
