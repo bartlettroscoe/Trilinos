@@ -23,6 +23,10 @@ TRIBITS_ADD_ADVANCED_TEST(
   COMM mpi
   )
 
+IF (TPL_ENABLE_CUDA)
+  SET(CurlLaplacianExample-ConvTest-Quad-Order-4-TIMEOUT_ARGS TIMEOUT 2700)
+ENDIF()
+
 FOREACH( ORDER 1 2 3 4 )
   TRIBITS_ADD_ADVANCED_TEST(
     CurlLaplacianExample-ConvTest-Quad-Order-${ORDER}
@@ -56,6 +60,7 @@ FOREACH( ORDER 1 2 3 4 )
            32
       PASS_REGULAR_EXPRESSION "Test Passed"
     COMM mpi
+    ${CurlLaplacianExample-ConvTest-Quad-Order-${ORDER}-TIMEOUT_ARGS}
     )
 ENDFOREACH() 
 

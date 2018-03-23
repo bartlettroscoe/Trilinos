@@ -7,6 +7,11 @@ TRIBITS_ADD_EXECUTABLE(
   PoissonInterfaceExample 
   SOURCES ${ASSEMBLY_EXAMPLE_SOURCES})
 
+IF (TPL_ENABLE_CUDA AND CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+  SET(PoissonInterfaceExample_2d_MPI_4-TIMEOUT_ARGS
+    TIMEOUT 2700)
+ENDIF()
+
 TRIBITS_ADD_ADVANCED_TEST(
   PoissonInterfaceExample_2d_MPI_4
   TEST_0 EXEC PoissonInterfaceExample
@@ -17,7 +22,14 @@ TRIBITS_ADD_ADVANCED_TEST(
     ARGS --nx=5 --linear --test-jacobian
     PASS_REGULAR_EXPRESSION "PASS BASICS"
     NUM_MPI_PROCS 4
-  COMM mpi)
+  COMM mpi
+  ${PoissonInterfaceExample_2d_MPI_4-TIMEOUT_ARGS}
+  )
+
+IF (TPL_ENABLE_CUDA AND CMAKE_BUILD_TYPE STREQUAL "RELEASE")
+  SET(PoissonInterfaceExample_2d_diffsideids_MPI_1-TIMEOUT_ARGS
+    TIMEOUT 2700)
+ENDIF()
 
 TRIBITS_ADD_ADVANCED_TEST(
   PoissonInterfaceExample_2d_diffsideids_MPI_1
@@ -25,7 +37,9 @@ TRIBITS_ADD_ADVANCED_TEST(
     ARGS --test-jacobian --mesh-filename=diffsideids.exo
     PASS_REGULAR_EXPRESSION "PASS BASICS"
     NUM_MPI_PROCS 1
-  COMM serial mpi)
+  COMM serial mpi
+  ${PoissonInterfaceExample_2d_diffsideids_MPI_1-TIMEOUT_ARGS}
+  )
 
 TRIBITS_ADD_ADVANCED_TEST(
   PoissonInterfaceExample_3d_MPI_4

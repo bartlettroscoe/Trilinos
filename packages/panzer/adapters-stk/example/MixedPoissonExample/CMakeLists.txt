@@ -23,6 +23,13 @@ TRIBITS_ADD_ADVANCED_TEST(
   COMM mpi
   )
 
+IF (TPL_ENABLE_CUDA)
+  IF(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+    SET(MixedPoissonExample-ConvTest-Hex-Order-2-TIMEOUT_ARGS TIMEOUT 2700)
+  ENDIF()
+  SET(MixedPoissonExample-ConvTest-Hex-Order-3-TIMEOUT_ARGS TIMEOUT 2700)
+ENDIF()
+
 ## basis order 1-3
 FOREACH( ORDER 1 2 3)
   SET(HDIV_ORDER ${ORDER})
@@ -59,6 +66,7 @@ FOREACH( ORDER 1 2 3)
          12
       PASS_REGULAR_EXPRESSION "Test Passed"
     COMM mpi
+    ${MixedPoissonExample-ConvTest-Hex-Order-${ORDER}-TIMEOUT_ARGS}
   )
 
 ENDFOREACH()
