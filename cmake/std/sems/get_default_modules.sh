@@ -9,7 +9,7 @@ else
   exit 1
 fi
 
-sems_mpi_and_version_default=sems-openmpi/1.6.5
+sems_mpi_and_version_default=sems-openmpi/1.8.7
 sems_python_and_version_default=sems-python/2.7.9
 sems_cmake_and_version_default=sems-cmake/3.5.2
 sems_git_and_version_default=sems-git/2.10.1
