@@ -52,9 +52,7 @@
 #include "MatrixMarket_Tpetra.hpp"
 #include <cstdlib>
 #include <sstream>
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-#  include "KokkosSparse_gauss_seidel.hpp"
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+#include "KokkosSparse_gauss_seidel.hpp"
 
 
 // mfh 28 Mar 2013: Uncomment out these three lines to compute
@@ -306,6 +304,14 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   using Teuchos::RCP;
   typedef scalar_type ST; // just to make code below shorter
 
+  if (pl.isType<double>("relaxation: damping factor")) {
+    // Make sure that ST=complex can run with a damping factor that is
+    // a double.
+    ST df = pl.get<double>("relaxation: damping factor");
+    pl.remove("relaxation: damping factor");
+    pl.set("relaxation: damping factor",df);
+  }
+
   pl.validateParametersAndSetDefaults (* getValidParameters ());
 
   const Details::RelaxationType precType =
@@ -514,7 +520,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       {
         auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
         auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-        if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+        if (X_lcl_host.data () == Y_lcl_host.data ()) {
           Xcopy = rcp (new MV (X, Teuchos::Copy));
         } else {
           Xcopy = rcpFromRef (X);
@@ -606,7 +612,6 @@ void Relaxation<MatrixType>::initialize ()
   }
 
   if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
     const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
     TEUCHOS_TEST_FOR_EXCEPTION
       (crsMat == NULL, std::logic_error, "Ifpack2::Relaxation::initialize: "
@@ -642,12 +647,6 @@ void Relaxation<MatrixType>::initialize ()
                            kcsr.graph.row_map,
                            kcsr.graph.entries,
                            is_symmetric);
-#else // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "The multithreaded implementation of Gauss-Seidel "
-     "is not enabled.  Please talk to the Ifpack2 developers about how to "
-     "enable this method.");
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
   }
 
 
@@ -685,10 +684,10 @@ public:
   InvertDiagBlocks (BlockDiagView& block_diag)
     : block_diag_(block_diag)
   {
-    const auto blksz = block_diag.dimension_1();
-    Kokkos::resize(rwrk_buf_, block_diag_.dimension_0(), blksz);
+    const auto blksz = block_diag.extent(1);
+    Kokkos::resize(rwrk_buf_, block_diag_.extent(0), blksz);
     rwrk_ = rwrk_buf_;
-    Kokkos::resize(iwrk_buf_, block_diag_.dimension_0(), blksz);
+    Kokkos::resize(iwrk_buf_, block_diag_.extent(0), blksz);
     iwrk_ = iwrk_buf_;
   }
 
@@ -762,7 +761,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       blockDiag_ = block_diag_type (); // clear it before reallocating
       blockDiag_ = block_diag_type ("Ifpack2::Relaxation::blockDiag_",
                                     lclNumMeshRows, blockSize, blockSize);
-      if (Teuchos::as<LO>(diagOffsets_.dimension_0 () ) < lclNumMeshRows) {
+      if (Teuchos::as<LO>(diagOffsets_.extent (0) ) < lclNumMeshRows) {
         // Clear diagOffsets_ first (by assigning an empty View to it)
         // to save memory, before reallocating.
         diagOffsets_ = Kokkos::View<size_t*, device_type> ();
@@ -770,11 +769,11 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       }
       blockCrsA->getCrsGraph ().getLocalDiagOffsets (diagOffsets_);
       TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (diagOffsets_.dimension_0 ()) !=
-         static_cast<size_t> (blockDiag_.dimension_0 ()),
-         std::logic_error, "diagOffsets_.dimension_0() = " <<
-         diagOffsets_.dimension_0 () << " != blockDiag_.dimension_0() = "
-         << blockDiag_.dimension_0 () <<
+        (static_cast<size_t> (diagOffsets_.extent (0)) !=
+         static_cast<size_t> (blockDiag_.extent (0)),
+         std::logic_error, "diagOffsets_.extent(0) = " <<
+         diagOffsets_.extent (0) << " != blockDiag_.extent(0) = "
+         << blockDiag_.extent (0) <<
          ".  Please report this bug to the Ifpack2 developers.");
       savedDiagOffsets_ = true;
     }
@@ -935,7 +934,7 @@ void Relaxation<MatrixType>::compute ()
       } else {
         if (! savedDiagOffsets_) { // we haven't precomputed offsets
           const size_t lclNumRows = A_->getRowMap ()->getNodeNumElements ();
-          if (diagOffsets_.dimension_0 () < lclNumRows) {
+          if (diagOffsets_.extent (0) < lclNumRows) {
             typedef typename node_type::device_type DT;
             diagOffsets_ = Kokkos::View<size_t*, DT> (); // clear 1st to save mem
             diagOffsets_ = Kokkos::View<size_t*, DT> ("offsets", lclNumRows);
@@ -976,7 +975,7 @@ void Relaxation<MatrixType>::compute ()
     auto diag_2d = Diagonal_->template getLocalView<Kokkos::HostSpace> ();
     auto diag_1d = Kokkos::subview (diag_2d, Kokkos::ALL (), 0);
     // FIXME (mfh 12 Jan 2016) temp fix for Kokkos::complex vs. std::complex.
-    scalar_type* const diag = reinterpret_cast<scalar_type*> (diag_1d.ptr_on_device ());
+    scalar_type* const diag = reinterpret_cast<scalar_type*> (diag_1d.data ());
 
     // Setup for L1 Methods.
     // Here we add half the value of the off-processor entries in the row,
@@ -1201,7 +1200,6 @@ void Relaxation<MatrixType>::compute ()
       Importer_ = A_->getGraph ()->getImporter ();
       Diagonal_->template sync<device_type> ();
     }
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
     //KokkosKernels GaussSiedel Initialization.
     if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
       const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
@@ -1223,7 +1221,6 @@ void Relaxation<MatrixType>::compute ()
                                 kcsr.values,
                                 is_symmetric);
     }
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
   } // end TimeMonitor scope
 
   ComputeTime_ += Time_->totalElapsedTime ();
@@ -1719,7 +1716,6 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
                const int numSweeps,
                const bool zeroInitialGuess) const
 {
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
   using Teuchos::null;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1877,7 +1873,7 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
 
     if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        X_colMap_host_view.ptr_on_device () != X_domainMap_host_view.ptr_on_device (),
+        X_colMap_host_view.data () != X_domainMap_host_view.data (),
         std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
         "Pointer to start of column Map view of X is not equal to pointer to "
         "start of (domain Map view of) X.  This may mean that "
@@ -1886,13 +1882,13 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      X_colMap_host_view.dimension_0 () < X_domainMap_host_view.dimension_0 () ||
+      X_colMap_host_view.extent (0) < X_domainMap_host_view.extent (0) ||
       X_colMap->getLocalLength () < X_domainMap->getLocalLength (),
       std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
       "X_colMap has fewer local rows than X_domainMap.  "
-      "X_colMap_host_view.dimension_0() = " << X_colMap_host_view.dimension_0 ()
-      << ", X_domainMap_host_view.dimension_0() = "
-      << X_domainMap_host_view.dimension_0 ()
+      "X_colMap_host_view.extent(0) = " << X_colMap_host_view.extent (0)
+      << ", X_domainMap_host_view.extent(0) = "
+      << X_domainMap_host_view.extent (0)
       << ", X_colMap->getLocalLength() = " << X_colMap->getLocalLength ()
       << ", and X_domainMap->getLocalLength() = "
       << X_domainMap->getLocalLength ()
@@ -1969,7 +1965,7 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
   bool update_y_vector = true;
   //false as it was done up already, and we dont want to zero it in each sweep.
   bool zero_x_vector = false;
-  
+
   for (int sweep = 0; sweep < numSweeps; ++sweep) {
     if (! importer.is_null () && sweep > 0) {
       // We already did the first Import for the zeroth sweep above,
@@ -2028,12 +2024,6 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
     }
   }
 
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "The multithreaded implementation of Gauss-Seidel "
-     "is not enabled.  Please talk to the Ifpack2 developers about how to "
-     "enable this method.");
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 }
 
 template<class MatrixType>
