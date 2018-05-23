@@ -234,3 +234,17 @@ ATDM_SET_CACHE(TPL_Netcdf_LIBRARIES "$ENV{ATDM_CONFIG_NETCDF_LIBS}" CACHE FILEPA
 ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # NOTE: Not clear why you need this since the TPL DLlib is not explicilty
 # enabled anywhere in the EM-Plasma/BuildScripts files.xsxs
+
+#
+# G) Submit only to the testing-vm.sandia.gov/cdash/ site
+#
+#
+
+SET_DEFAULT_AND_FROM_ENV(CTEST_DROP_SITE "testing-vm.sandia.gov")
+SET_DEFAULT_AND_FROM_ENV(CTEST_DROP_LOCATION "/cdash/submit.php?project=Trilinos")
+SET_DEFAULT_AND_FROM_ENV(TRIBITS_2ND_CTEST_DROP_SITE FALSE)
+SET_DEFAULT_AND_FROM_ENV(TRIBITS_2ND_CTEST_DROP_LOCATION FALSE)
+
+# NOTE: We have to only submit to the new CDash site so as to avoid submtting
+# data form the all-at-once approach to the old testing.sandia.gov/cdash/ site
+# since it will spam the wrong people with CDash error emails.
