@@ -31,7 +31,16 @@ else
 fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=HSW
+  if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW" ]] ; then
+    export ATDM_CONFIG_KOKKOS_ARCH=HSW
+  elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" != "" ]] ; then
+    echo "***"
+    echo "*** ERROR: ATDM_CONFIG_KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH is not a supported for the GNU compler!"
+    echo "***"
+    return
+  else
+    export ATDM_CONFIG_KOKKOS_ARCH=HSW
+  fi
   module load devpack/openmpi/2.1.1/gcc/4.9.3/cuda/8.0.61
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
