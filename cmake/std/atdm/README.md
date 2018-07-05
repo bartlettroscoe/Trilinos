@@ -92,6 +92,25 @@ The following `<job-name>` keywords determine the Kokkos threading model
 If `cuda` (or `cuda-8.0`, `cuda-9.0`, etc.) is given, then `<NODE_TYPE>` is
 automatically set to `CUDA`.
 
+The `<job-name>` string can also contain keywords to determine the
+`KOKKOS_ARCH` option of the build.  This is the case-sensitive architecture
+name that is recognized by the CMake
+[KOKKOS_ARCH](https://trilinos.org/docs/files/TrilinosBuildReference.html#configuring-with-kokkos-and-advanced-back-ends)
+configure option for Trilinos and Kokkos.  Some common supported Kokkos
+architectures for the host node include `BDW`, `HSW`, `Power8`, `Power9`, and
+`KNL`.  When a GPU is present, some common Kokkos architecture options include
+`Kepler37` and `Pascal60`.  If one selects a `KOKKOS_ARCH` value that is not
+supported by the current system or selected compiler, then the `load-env.sh`
+script will return an error message listing the value choices for
+`KOKKOS_ARCH` for each supported compiler.
+
+Note that currently only a single `KOKKOS_ARCH` value is recognized in the
+`<job-name>` string and it must be proceeded a dash '-' such as with
+`intel-KNL` or `cuda-Kepler37`.  This setup does not currently support
+specifying multiple `KOKKOS_ARCH` values (since there is no example yet where
+that would be needed or useful) but such functionality could be supported in
+the future if needed.
+
 All other strings in `<job-name>` are ignored but are allowed for
 informational purposes.  The reason that a `<job-name>` string is defined in
 this form is that this can be used as the Jenkins job name and the Trilinos
