@@ -29,11 +29,6 @@ echo "KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
 export ATDM_CONFIG_USE_NINJA=OFF
 export ATDM_CONFIG_BUILD_COUNT=8
-export OMP_NUM_THREADS=2
-
-# Don't purge as this removes the Cray default environment
-#module purge
-module use /projects/EMPIRE/mutrino/tpls/hsw/modulefiles
 
 # Use srun to run mpi jobs
 export ATDM_CONFIG_MPI_EXEC="/opt/slurm/bin/srun"
@@ -48,18 +43,17 @@ export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
 # TRIL-214).
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW"  ]; then
-    module load devpack/20180124/cray/7.6.2/intel/17.0.4
-    module load gcc/4.9.3
-    module load cmake/3.9.0
-    export MPICXX=`which CC`
-    export MPICC=`which cc`
-    export MPIF90=`which ftn`
-
-#    # Cray provides differently named wrappers
-#    export CXX=`which CC`
-#    export CC=`which cc`
-    export ATDM_CONFIG_LAPACK_LIB="-mkl"
-    export ATDM_CONFIG_BLAS_LIB="-mkl"
+    module use /projects/EMPIRE/mutrino/tpls/hsw/modulefiles
+    export OMP_NUM_THREADS=2
+    export ATDM_CONFIG_MPI_POST_FLAG="-c 4"
+elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL"  ]; then
+    module use /projects/EMPIRE/mutrino/tpls/knl/modulefiles
+    export SLURM_TASKS_PER_NODE=16
+    export OMP_NUM_THREADS=16
+    export OMP_PLACES=threads
+    export OMP_PROC_BIND=spread
+    export ATDM_CONFIG_MPI_POST_FLAG="--hint=nomultithread;-c 4"
+    export ATDM_CONFIG_SBATCH_OPTIONS="-p knl -C cache --hint=multithread"
 else
     echo "***"
     echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH is not"
@@ -71,12 +65,22 @@ else
     return
 fi
 
+module load devpack/20180124/cray/7.6.2/intel/17.0.4
+module load gcc/4.9.3
+module load cmake/3.9.0
+export MPICXX=`which CC`
+export MPICC=`which cc`
+export MPIF90=`which ftn`
+
+# Cray provides differently named wrappers
+export ATDM_CONFIG_LAPACK_LIB="-mkl"
+export ATDM_CONFIG_BLAS_LIB="-mkl"
+
 export ATDM_CONFIG_USE_HWLOC=OFF
 
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lm"
 
-export ATDM_CONFIG_MPI_POST_FLAG="-c 4"
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
 
 #
@@ -140,12 +144,15 @@ function atdm_run_script_on_compute_node {
   echo
   echo "Running '$script_to_run' using sbatch in the background ..."
   set -x
-#  sbatch --output=$output_file --wait -N1 --time=${timeout} \
-#    -J $JOB_NAME --account=${account} ${script_to_run} &
-#  SBATCH_PID=$!
-  sbatch --output=$output_file --wait -N1 --time=${timeout} \
-    -J $JOB_NAME ${script_to_run} &
-  SBATCH_PID=$!
+  if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ] ; then
+    sbatch --output=$output_file --wait -N1 -p knl -C cache --hint=multithread\
+      --time=${timeout} -J $JOB_NAME ${script_to_run} &
+    SBATCH_PID=$!
+  else 
+    sbatch --output=$output_file --wait -N1 --time=${timeout}\
+      -J $JOB_NAME ${script_to_run} &
+    SBATCH_PID=$!
+  fi
   set +x
   
   echo
