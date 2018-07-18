@@ -5,7 +5,6 @@
 ###############################################################################
 
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/utils/ATDMDevEnvUtils.cmake")
-KOKKOS
 #
 # A) Assert the right env vars are set and set local defaults
 #
