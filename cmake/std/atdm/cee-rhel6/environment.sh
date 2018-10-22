@@ -63,7 +63,7 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
   export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/SRC
   export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist_4.2.a
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
-  module load sparc-dev/intel-17.0.1_intelmpi-5.1.2
+  module load sparc-dev/intel
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
