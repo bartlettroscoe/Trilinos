@@ -44,28 +44,45 @@ export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
 # <jobid> step creation temporarily disabled" failures on 'mutrino' (see
 # TRIL-214).
 
-if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW"  ]; then
-    module use /projects/EMPIRE/mutrino/tpls/hsw/modulefiles
-    export OMP_NUM_THREADS=2
-    export ATDM_CONFIG_MPI_POST_FLAG="-c 4"
-elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL"  ]; then
-    module use /projects/EMPIRE/mutrino/tpls/knl/modulefiles
-    export SLURM_TASKS_PER_NODE=16
-    export OMP_NUM_THREADS=2
-    export OMP_PLACES=threads
-    export OMP_PROC_BIND=spread
-    export ATDM_CONFIG_MPI_POST_FLAG="--hint=nomultithread;-c 4"
-    export ATDM_CONFIG_SBATCH_OPTIONS="-p knl -C cache --hint=multithread"
+if [[ "$ATDM_CONFIG_COMPILER" == "INTEL" ]] && \
+  [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW" ]] \
+  ; then
+  module use /projects/EMPIRE/mutrino/tpls/hsw/modulefiles
+  NRP=32
+  NT=2
+  export OMP_NUM_THREADS=${NT}
+  export OMP_PLACES=threads
+  export OMP_PROC_BIND=
+  #RUN_SPARC="srun --cpu_bind=core --ntasks=${NP} --ntasks-per-node=${NRP} --cpus-per-task=${NT}"
+  export ATDM_CONFIG_MPI_EXEC=srun
+  export ATDM_CONFIG_MPI_PRE_FLAGS="--cpu_bind=core"
+  export ATDM_MPI_EXEC_NUMPROCS_FLAG="--ntasks"
+  export ATDM_CONFIG_MPI_POST_FLAGS="--ntasks-per-node=${NRP};--cpus-per-task=${NT}"
+elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL" ]] && \
+  [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ]] \
+  ; then
+  module use /projects/EMPIRE/mutrino/tpls/knl/modulefiles
+  NRP=32
+  NT=8
+  export MKL_CBWR=AVX2
+  export OMP_NUM_THREADS=${NT}
+  export OMP_PLACES=threads
+  export OMP_PROC_BIND=spread
+  #RUN_SPARC="srun --cpu_bind=core --constraint=knl --ntasks=${NP} --ntasks-per-node=${NRP} --cpus-per-task=${NT} --cores-per-socket=64 --threads-per-core=4"
+  export ATDM_CONFIG_MPI_EXEC=srun
+  export ATDM_CONFIG_MPI_PRE_FLAGS="--cpu_bind=core;--constraint=knl"
+  export ATDM_MPI_EXEC_NUMPROCS_FLAG="--ntasks"
+  export ATDM_CONFIG_MPI_POST_FLAGS="--ntasks-per-node=${NRP};--cpus-per-task=${NT};--cores-per-socket=64;--threads-per-core=4"
 else
-    echo
-    echo "***"
-    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH is not"
-    echo "*** a supported combination on this system!"
-    echo "*** Combinations that are supported: "
-    echo "*** > Intel compiler with KOKKOS_ARCH=HSW"
-    echo "*** > Intel compiler with KOKKOS_ARCH=KNL"
-   echo "***"
-    return
+  echo
+  echo "***"
+  echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH is not"
+  echo "*** a supported combination on this system!"
+  echo "*** Combinations that are supported: "
+  echo "*** > Intel compiler with KOKKOS_ARCH=HSW"
+  echo "*** > Intel compiler with KOKKOS_ARCH=KNL"
+  echo "***"
+  return
 fi
 
 # Load the modules (can't purge)
