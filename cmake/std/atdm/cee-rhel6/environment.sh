@@ -47,6 +47,16 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 
 module purge
 
+#
+# OpenMP settings
+#
+
+# Allow OpenMP threadS to migrate
+export OMP_PROC_BIND=FALSE
+
+# Make MKL use only one proc by default
+export OMP_NUM_THREADS=1
+
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
   export OMP_NUM_THREADS=2
@@ -73,7 +83,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0-OPENMPI-1.10.2" ]] ; then
   export MPIF90=`which mpif90`
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
-  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;core"
+  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;none"
   # NOTE: Above is waht What SPARC uses?
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-4.9.3-OPENMPI-1.10.2" ]] ; then
   module load sparc-dev/gcc-4.9.3_openmpi-1.10.2
@@ -97,7 +107,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2-MPICH2-3.2" ]; then
   export MPIF90=`which mpif90`
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
-  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;core" # Critical to perforamnce!
+  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;none"
   export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
