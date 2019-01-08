@@ -987,8 +987,8 @@ contents:
     all_supported_builds.sh  # [Optional] List of all supported builds
     custom_bulds.sh  # [Optional] Special logic for compiler keywords, etc.
     tweaks/
-       <COMPILER0>-<BUILD_TYPE0>-<NODE_TYPE0>-<KOKKOS_ARCH0>.cmake  # [Optional]
-       <COMPILER1>-<BUILD_TYPE1>-<NODE_TYPE1>-<KOKKOS_ARCH0>.cmake  # [Optional]
+       <COMPILER0>_<BUILD_TYPE0>_<NODE_TYPE0>_<KOKKOS_ARCH0>.cmake  # [Optional]
+       <COMPILER1>_<BUILD_TYPE1>_<NODE_TYPE1>_<KOKKOS_ARCH0>.cmake  # [Optional]
        ...
 ```
 
@@ -1027,7 +1027,7 @@ directory contain special settings for specific builds for a specific system.
 Typically, this file contains (temporary) disables for tests for that given
 build.  When a configure is performed, the internal CMake variable
 `ATDM_BUILD_NAME_KEYS_STR` set to
-`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ARCH>` (printed to STDOUT) is
+`<COMPILER>_<BUILD_TYPE>_<NODE_TYPE>_<KOKKOS_ARCH>` (printed to STDOUT) is
 used to define a default file name:
 
 ```
@@ -1041,9 +1041,9 @@ its options are read.  For example, this is what the output looks like on
 
 ```
 -- Reading in configuration options from cmake/std/atdm/ATDMDevEnv.cmake ...
--- ATDM_BUILD_NAME_KEYS_STR='GNU-RELEASE-OPENMP-POWER9'
--- ATDM_TWEAKS_FILES='<...>/Trilinos/cmake/std/atdm/waterman/tweaks/GNU-RELEASE-OPENMP-POWER9.cmake'
--- Including ATDM build tweaks file <...>//Trilinos/cmake/std/atdm/waterman/tweaks/GNU-RELEASE-OPENMP-POWER9.cmake ...
+-- ATDM_BUILD_NAME_KEYS_STR='GNU_RELEASE_OPENMP_POWER9'
+-- ATDM_TWEAKS_FILES='<...>/Trilinos/cmake/std/atdm/waterman/tweaks/GNU_RELEASE_OPENMP_POWER9.cmake'
+-- Including ATDM build tweaks file <...>//Trilinos/cmake/std/atdm/waterman/tweaks/GNU_RELEASE_OPENMP_POWER9.cmake ...
 ```
 
 
@@ -1126,7 +1126,7 @@ For example, for the `intel-debug-openmp-KNL` build on 'mutrino', the printout
 would be:
 
 ```
--- ATDM_TWEAKS_FILES='.../Trilinos/cmake/std/atdm/mutrino/tweaks/INTEL-DEBUG-OPENMP-KNL.cmake'
+-- ATDM_TWEAKS_FILES='.../Trilinos/cmake/std/atdm/mutrino/tweaks/INTEL_DEBUG_OPENMP_KNL.cmake'
 ```
 
 For example, Trilinos commit
@@ -1138,8 +1138,8 @@ shows the disable of the test:
 ATDM_SET_ENABLE(Stratimikos_test_aztecoo_thyra_driver_MPI_1_DISABLE ON)
 ```
 
-in both the files `cmake/std/atdm/shiller/tweaks/GNU-DEBUG-SERIAL.cmake` and
-`cmake/std/atdm/shiller/tweaks/GNU-RELEASE-SERIAL.cmake` (before `-HSW` was
+in both the files `cmake/std/atdm/shiller/tweaks/GNU_DEBUG_SERIAL.cmake` and
+`cmake/std/atdm/shiller/tweaks/GNU_RELEASE_SERIAL.cmake` (before `-HSW` was
 added to the names).
 
 NOTE: Adding a comment with the Trilinos GitHub Issue ID (`#2925` in this
@@ -1172,8 +1172,8 @@ and then the inclusion of that file in the specific tweak files for each CUDA
 build:
 
 ```
-  Trilinos/cmake/std/atdm/ride/tweaks/CUDA-DEBUG-CUDA.cmake
-  Trilinos/cmake/std/atdm/ride/tweaks/CUDA-RELEASE-CUDA.cmake
+  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_DEBUG_CUDA.cmake
+  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_RELEASE_CUDA.cmake
 ```
 
 (before `-POWER8-KEPLER37` was added to the names) using the inserted CMake
