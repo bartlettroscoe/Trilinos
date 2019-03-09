@@ -1,5 +1,5 @@
 #
-# This function aids in the building of an explicit list of libraries.
+# Build an explicit list of libraries
 #
 # Usage:
 #
@@ -18,8 +18,6 @@
 #   atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${CBLAS_ROOT}/lib/intel64 .so \
 #      iomp5
 #
-
-
 function atdm_config_add_libs_to_var {
   
   # Formal arguments
