@@ -44,6 +44,15 @@ export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
 # <jobid> step creation temporarily disabled" failures on 'mutrino' (see
 # TRIL-214).
 
+# NOTE: We can't purge modules on 'mutrino' or it messes everything up!
+
+# Unload the default intel/18.0.2 and load intel/18.0.5 to get around defect
+# in MKL (see #3499)
+module load friendly-testing
+module unload intel/18.0.2
+module unload gcc/4.9.3
+module load intel/18.0.5
+
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW"  ]; then
     module use /projects/EMPIRE/mutrino/tpls/hsw/modulefiles
     export OMP_NUM_THREADS=2
@@ -68,10 +77,9 @@ else
     return
 fi
 
-# Load the modules (can't purge)
+# Load the modules for the TPLs for intel/17.0.4
 module load devpack/20180124/cray/7.6.2/intel/17.0.4
-module load gcc/4.9.3
-module load cmake/3.9.0
+# NOTE: Intel 17.0.4 is ABI compatible with Intel 18.0.5 so this is okay.
 
 # No RPATH for static builds
 export ATDM_CONFIG_CMAKE_SKIP_INSTALL_RPATH=ON
@@ -86,7 +94,8 @@ export MPICXX=`which CC`
 export MPICC=`which cc`
 export MPIF90=`which ftn`
 
-# Cray provides differently named wrappers
+# BLAS and LAPACK
+
 export ATDM_CONFIG_LAPACK_LIBS="-mkl"
 export ATDM_CONFIG_BLAS_LIBS="-mkl"
 
