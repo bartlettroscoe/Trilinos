@@ -58,11 +58,11 @@
 #include "MoochoPack_MoochoThyraSolver.hpp"
 #endif
 
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
-#ifdef HAVE_PIRO_OPTIPACK
-#include "OptiPack_NonlinearCG.hpp"
-#include "GlobiPack_BrentsLineSearch.hpp"
-#endif
+#if defined(HAVE_PIRO_OPTIPACK) && !defined(OPTIPACK_HIDE_DEPRECATED_CODE)
+#  ifdef HAVE_PIRO_OPTIPACK
+#    include "OptiPack_NonlinearCG.hpp"
+#    include "GlobiPack_BrentsLineSearch.hpp"
+#  endif
 #endif
 
 #ifdef HAVE_PIRO_ROL
@@ -120,7 +120,7 @@ Piro::PerformAnalysis(
   }
 #endif
 
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
+#if defined(HAVE_PIRO_OPTIPACK) && !defined(OPTIPACK_HIDE_DEPRECATED_CODE)
 #ifdef HAVE_PIRO_OPTIPACK
   else if (analysis == "OptiPack") {
     *out << "Piro PerformAnalysis: Optipack Optimization Being Performed " << endl;
@@ -142,7 +142,7 @@ Piro::PerformAnalysis(
 #endif
   else {
     if (analysis == "Dakota" || 
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
+#if defined(HAVE_PIRO_OPTIPACK) && !defined(OPTIPACK_HIDE_DEPRECATED_CODE)
         analysis == "OptiPack" || 
 #endif
         analysis == "MOOCHO" || analysis == "ROL")
@@ -151,7 +151,7 @@ Piro::PerformAnalysis(
     else
       *out << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
            << "       Valid analysis types are: Solve, Dakota, MOOCHO, "
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
+#if defined(HAVE_PIRO_OPTIPACK) && !defined(OPTIPACK_HIDE_DEPRECATED_CODE)
            << "OptiPack, "
 #endif
            << "ROL\n" << endl;
@@ -262,7 +262,7 @@ Piro::PerformDakotaAnalysis(
 #endif
 }
 
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
+#if defined(HAVE_PIRO_OPTIPACK) && !defined(OPTIPACK_HIDE_DEPRECATED_CODE)
 int
 OPTIPACK_DEPRECATED
 Piro::PerformOptiPackAnalysis(
@@ -319,7 +319,8 @@ Piro::PerformOptiPackAnalysis(
  return 0;  // should not fail tests
 #endif
 }
-#endif  // OPTIPACK_HIDE_DEPRECATED_CODE
+#endif // defined(HAVE_PIRO_OPTIPACK) && !defined(OPTIPACK_HIDE_DEPRECATED_CODE)
+
 
 int
 Piro::PerformROLAnalysis(
@@ -514,7 +515,7 @@ Piro::getValidPiroAnalysisParameters()
   validPL->set<bool>("Output Final Parameters", false, "");
   validPL->sublist("Solve",     false, "");
   validPL->sublist("MOOCHO",    false, "");
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
+#if defined(HAVE_PIRO_OPTIPACK) && !defined(OPTIPACK_HIDE_DEPRECATED_CODE)
   validPL->sublist("OptiPack",  false, "");
   validPL->sublist("GlobiPack", false, "");
 #endif

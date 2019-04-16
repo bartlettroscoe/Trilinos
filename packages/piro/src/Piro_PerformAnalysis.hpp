@@ -49,8 +49,8 @@
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
-#include "OptiPack_Config.h"
+#if defined(HAVE_PIRO_OPTIPACK) && !defined(OPTIPACK_HIDE_DEPRECATED_CODE)
+# include "OptiPack_Config.h"
 #endif 
 
 namespace Piro {
@@ -89,7 +89,7 @@ namespace Piro {
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
 
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
+#if defined(HAVE_PIRO_OPTIPACK) && !defined(OPTIPACK_HIDE_DEPRECATED_CODE)
   //! \brief Performs analysis of a solved model using Optipack.
   //! \details Requires that the OptiPack package is available.
   //! \ingroup Piro_Thyra_analysis_driver_grp
