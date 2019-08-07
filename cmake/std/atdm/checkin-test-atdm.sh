@@ -129,6 +129,8 @@ for ATDM_CHT_CURENT_ARG in "$@" ; do
     ATDM_CHT_FOUND_PUSH=1
   elif [[ "$ATDM_CHT_CURENT_ARG" == "--send-email-to"* ]] ; then
     ATDM_CHT_SEND_EMAIL_TO_ARG="$ATDM_CHT_CURENT_ARG"
+  elif [[ "$ATDM_CHT_CURENT_ARG" == "--enable-all-packages"* ]] ; then
+    ATDM_CHT_ENABLE_ALL_PACKAGES_ARG="$ATDM_CHT_CURENT_ARG"
   elif [[ "$ATDM_CHT_CURENT_ARG" == "--enable-packages"* ]] ; then
     ATDM_CHT_ENABLE_PACKAGES_ARG="$ATDM_CHT_CURENT_ARG"
   fi
@@ -195,7 +197,7 @@ else
   echo "Creating default file $_LOCAL_CHECKIN_TEST_DEFAULTS!"
   echo "
 defaults = [
-  \"--enable-all-package=off\",
+  \"--enable-all-packages=off\",
   \"--no-enable-fwd-packages\",
   ]
   " > $_LOCAL_CHECKIN_TEST_DEFAULTS
@@ -243,7 +245,7 @@ echo
 
 $ATDM_TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
   --default-builds= --st-extra-builds=$ATDM_BUILD_NAME_KEYS_COMMA_LIST \
-  --allow-no-pull "$ATDM_CHT_ENABLE_PACKAGES_ARG" \
+  --allow-no-pull "$ATDM_CHT_ENABLE_ALL_PACKAGES_ARG" "$ATDM_CHT_ENABLE_PACKAGES_ARG" \
   $ATDM_CHT_SEND_EMAIL_TO_ARG \
   --log-file=checkin-test.final.out \
   &> /dev/null
