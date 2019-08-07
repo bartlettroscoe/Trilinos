@@ -119,6 +119,18 @@ elif [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-2.1.2" ]; then
 
   load_spack_tpl_modules gcc-7.2.0 openmpi-2.1.2
 
+elif [ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]; then
+
+  module load spack-llvm/5.0.1
+  module load spack-gcc/7.2.0
+  export OMPI_CXX=`which clang++`
+  export OMPI_CC=`which clang`
+  export OMPI_FC=`which gfortran`
+
+  module load spack-openmpi/1.10.2-clang-5.0.1
+
+  load_spack_tpl_modules clang-5.0.1 openmpi-1.10.2
+
 else
   echo
   echo "***"
