@@ -456,7 +456,7 @@ public:
    \endcode
    * and construct to <tt>NULL</tt>
    */
-  inline RCP(ENull null_arg = null);
+  inline RCP(ENull null_arg = null) noexcept;
 
   /** \brief Construct from a raw pointer.
    *
@@ -528,7 +528,7 @@ public:
    * <li> <tt>r_ptr</tt> is uninitialized
    * </ul>
    */
-  inline RCP(RCP<T>&& r_ptr);
+  inline RCP(RCP<T>&& r_ptr) noexcept;
 
   /** \brief Initialize from another <tt>RCP<T2></tt> object (implicit conversion only).
    *
@@ -584,12 +584,10 @@ public:
    *
    * <b>Postconditons:</b><ul>
    * <li> <tt>*this</tt> is an exact copy of <tt>r_ptr</tt> before the call.
-   * <li> <tt>r_ptr</tt> is uninitialized
+   * <li> <tt>r_ptr</tt> is uninitialized.
    * </ul>
-   *
-   * Provides the "strong guarantee" in a debug build!
    */
-  inline RCP<T>& operator=(RCP<T>&& r_ptr);
+  inline RCP<T>& operator=(RCP<T>&& r_ptr) noexcept;
 
   /** \brief Assign to null.
    *
@@ -606,7 +604,7 @@ public:
   inline RCP<T>& operator=(ENull);
 
   /** \brief Swap the contents with some other RCP object. */
-  inline void swap(RCP<T> &r_ptr);
+  inline void swap(RCP<T> &r_ptr) noexcept;
 
   //@}
 

@@ -146,7 +146,7 @@ const RCPNodeHandle& RCP<T>::access_private_node() const
 
 template<class T>
 inline
-RCP<T>::RCP( ENull )
+RCP<T>::RCP( ENull ) noexcept
   : ptr_(NULL)
 {}
 
@@ -283,7 +283,7 @@ RCP<T>::RCP(const RCP<T>& r_ptr)
 
 template<class T>
 inline
-RCP<T>::RCP(RCP<T>&& r_ptr)
+RCP<T>::RCP(RCP<T>&& r_ptr) noexcept
   : ptr_(r_ptr.ptr_), node_(std::move(r_ptr.node_))
 {
   r_ptr.ptr_ = 0;
@@ -321,7 +321,7 @@ RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
 
 template<class T>
 inline
-RCP<T>& RCP<T>::operator=(RCP<T>&& r_ptr)
+RCP<T>& RCP<T>::operator=(RCP<T>&& r_ptr) noexcept
 {
 #ifdef TEUCHOS_DEBUG
   if (this == &r_ptr)
@@ -346,7 +346,7 @@ RCP<T>& RCP<T>::operator=(ENull)
 
 template<class T>
 inline
-void RCP<T>::swap(RCP<T> &r_ptr)
+void RCP<T>::swap(RCP<T> &r_ptr) noexcept
 {
   std::swap(r_ptr.ptr_, ptr_);
   node_.swap(r_ptr.node_);

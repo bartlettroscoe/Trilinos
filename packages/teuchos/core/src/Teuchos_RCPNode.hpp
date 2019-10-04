@@ -748,7 +748,7 @@ namespace Teuchos {
 class TEUCHOSCORE_LIB_DLL_EXPORT RCPNodeHandle {
 public:
   //! Default constructor
-  RCPNodeHandle (ENull null_arg = null)
+  RCPNodeHandle (ENull null_arg = null) noexcept
     : node_ (0), strength_ (RCP_STRONG)
   {
     (void) null_arg; // Silence "unused variable" compiler warning.
@@ -757,7 +757,7 @@ public:
   //! Constructor that takes a pointer to an RCPNode.
   RCPNodeHandle (RCPNode* node,
                  ERCPStrength strength_in = RCP_STRONG,
-                 bool newNode = true)
+                 bool newNode = true) noexcept
     : node_ (node), strength_ (strength_in)
   {
 #ifdef TEUCHOS_DEBUG
@@ -811,14 +811,14 @@ public:
   }
 
   //! Move constructor
-  RCPNodeHandle (RCPNodeHandle&& node_ref)
+  RCPNodeHandle (RCPNodeHandle&& node_ref) noexcept
     : node_ (node_ref.node_), strength_ (node_ref.strength_)
   {
     node_ref.resetRawMembersToNull();
   }
 
   //! Swap the contents of \c node_ref with \c *this.
-  void swap (RCPNodeHandle& node_ref) {
+  void swap (RCPNodeHandle& node_ref) noexcept {
     std::swap (node_ref.node_, node_);
     std::swap (node_ref.strength_, strength_);
   }
