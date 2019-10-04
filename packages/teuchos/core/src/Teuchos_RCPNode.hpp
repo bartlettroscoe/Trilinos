@@ -814,8 +814,7 @@ public:
   RCPNodeHandle (RCPNodeHandle&& node_ref)
     : node_ (node_ref.node_), strength_ (node_ref.strength_)
   {
-    node_ref.node_ = 0;
-    node_ref.strength_ = RCP_STRONG;
+    node_ref.resetRawMembersToNull();
   }
 
   //! Swap the contents of \c node_ref with \c *this.
@@ -823,8 +822,6 @@ public:
     std::swap (node_ref.node_, node_);
     std::swap (node_ref.strength_, strength_);
   }
-
-
 
   /// \brief Null assignment.
   ///
@@ -847,8 +844,7 @@ public:
     // NOTE: Don't need to check assignment to self since user-facing classes
     // do that!
     unbind(); // May throw in some cases
-    node_ = node_ref.node_;
-    strength_ = node_ref.strength_;
+    assignRawMembersFrom(node_ref);
     bind();
     return *this;
   }
@@ -862,10 +858,8 @@ public:
     // NOTE: Don't need to check assignment to self since user-facing classes
     // do that!
     unbind(); // May throw in some cases
-    node_ = node_ref.node_;
-    strength_ = node_ref.strength_;
-    node_ref.node_ = 0;
-    node_ref.strength_ = RCP_STRONG;
+    assignRawMembersFrom(node_ref);
+    node_ref.resetRawMembersToNull();
     return *this;
   }
 
@@ -1081,10 +1075,20 @@ private:
     }
   void unbindOneStrong();
   void unbindOneTotal();
+  inline void assignRawMembersFrom(const RCPNodeHandle &node_ref)
+    {
+      node_ = node_ref.node_;
+      strength_ = node_ref.strength_;
+    }
+  inline void resetRawMembersToNull()
+    {
+      node_ = 0;
+      strength_ = RCP_STRONG;
+    }
 };
 
 
-/** \brief Ouput stream operator for RCPNodeHandle.
+/** \brief Output stream operator for RCPNodeHandle.
  *
  * \relates RCPNodeHandle
  */
