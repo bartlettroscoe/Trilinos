@@ -83,6 +83,52 @@ using Teuchos::RCP_WEAK;
 using Teuchos::RCPNodeTracer;
 
 
+//
+// Helper functions
+//
+
+
+template<typename T>
+void assertRCPIsNull(const std::string &ptr_name, const RCP<T>& ptr,
+  std::ostream &out, bool &success)
+{
+  out << "Asserting "+ptr_name+" is null:\n";
+  TEST_EQUALITY_CONST(ptr.get(), 0);
+  TEST_EQUALITY_CONST(ptr.getRawPtr(), 0);
+  TEST_EQUALITY_CONST(ptr.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(ptr.strong_count(), 0);
+  TEST_EQUALITY_CONST(ptr.weak_count(), 0);
+  TEST_EQUALITY_CONST(ptr.has_ownership(), false);
+}
+
+
+#define ASSERT_RCP_IS_NULL(ptr) \
+  assertRCPIsNull(#ptr, ptr, out, success);
+
+
+template<typename T>
+void assertRCPIsOwning(const std::string &ptr_name, const RCP<T>& ptr, T* raw_ptr,
+  const int strong_count, std::ostream &out, bool &success)
+{
+  out << "Asserting "+ptr_name+" is owning:\n";
+  TEST_EQUALITY_CONST(ptr.get(), raw_ptr);
+  TEST_EQUALITY_CONST(ptr.getRawPtr(), raw_ptr);
+  TEST_EQUALITY_CONST(ptr.strength(), RCP_STRONG);
+  TEST_EQUALITY_CONST(ptr.strong_count(), strong_count);
+  TEST_EQUALITY_CONST(ptr.weak_count(), 0);
+  TEST_EQUALITY_CONST(ptr.has_ownership(), true);
+}
+
+
+#define ASSERT_RCP_IS_OWNING(ptr, raw_ptr, strong_count) \
+  assertRCPIsOwning(#ptr, ptr, raw_ptr, strong_count, out, success);
+
+
+//
+// Unit tests
+//
+
+
 TEUCHOS_UNIT_TEST( DeallocNull, free )
 {
   Teuchos::DeallocNull<A> d;
@@ -93,24 +139,15 @@ TEUCHOS_UNIT_TEST( DeallocNull, free )
 TEUCHOS_UNIT_TEST( RCP, construct_default )
 {
   RCP<A> a_rcp;
-  TEST_EQUALITY_CONST(a_rcp.get(), 0);
-  TEST_EQUALITY_CONST(a_rcp.getRawPtr(), 0);
-  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
-  TEST_EQUALITY_CONST(a_rcp.strong_count(), 0);
-  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
-  TEST_EQUALITY_CONST(a_rcp.has_ownership(), false);
+  ASSERT_RCP_IS_NULL(a_rcp);
 }
 
 
 TEUCHOS_UNIT_TEST( RCP, construct_nonull )
 {
-  RCP<A> a_rcp(new A);
-  TEST_INEQUALITY_CONST(a_rcp.get(), 0);
-  TEST_INEQUALITY_CONST(a_rcp.getRawPtr(), 0);
-  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
-  TEST_EQUALITY_CONST(a_rcp.strong_count(), 1);
-  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
-  TEST_EQUALITY_CONST(a_rcp.has_ownership(), true);
+  A *raw_ptr = new A;
+  RCP<A> a_rcp(raw_ptr);
+  ASSERT_RCP_IS_OWNING(a_rcp, raw_ptr, 1);
 }
 
 
@@ -118,54 +155,28 @@ TEUCHOS_UNIT_TEST( RCP, copy_construct_null )
 {
   RCP<A> a_rcp;
   RCP<A> b_rcp(a_rcp);
-  TEST_EQUALITY_CONST(a_rcp.get(), 0);
-  TEST_EQUALITY_CONST(a_rcp.getRawPtr(), 0);
-  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
-  TEST_EQUALITY_CONST(a_rcp.strong_count(), 0);
-  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
-  TEST_EQUALITY_CONST(a_rcp.has_ownership(), false);
-  TEST_EQUALITY_CONST(b_rcp.get(), 0);
-  TEST_EQUALITY_CONST(b_rcp.getRawPtr(), 0);
-  TEST_EQUALITY_CONST(b_rcp.strength(), RCP_STRONG);
-  TEST_EQUALITY_CONST(b_rcp.strong_count(), 0);
-  TEST_EQUALITY_CONST(b_rcp.weak_count(), 0);
-  TEST_EQUALITY_CONST(b_rcp.has_ownership(), false);
+  ASSERT_RCP_IS_NULL(a_rcp);
+  ASSERT_RCP_IS_NULL(b_rcp);
 }
 
 
 TEUCHOS_UNIT_TEST( RCP, copy_construct_nonnull )
 {
-  RCP<A> a_rcp(new A);
+  A *raw_ptr = new A;
+  RCP<A> a_rcp(raw_ptr);
   RCP<A> b_rcp(a_rcp);
-  TEST_EQUALITY(b_rcp.get(), a_rcp.get());
-  TEST_EQUALITY(b_rcp.getRawPtr(), a_rcp.getRawPtr());
-  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
-  TEST_EQUALITY_CONST(b_rcp.strength(), RCP_STRONG);
-  TEST_EQUALITY_CONST(a_rcp.strong_count(), 2);
-  TEST_EQUALITY_CONST(b_rcp.strong_count(), 2);
-  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
-  TEST_EQUALITY_CONST(b_rcp.weak_count(), 0);
-  TEST_EQUALITY_CONST(a_rcp.has_ownership(), true);
-  TEST_EQUALITY_CONST(b_rcp.has_ownership(), true);
+  ASSERT_RCP_IS_OWNING(a_rcp, raw_ptr, 2);
+  ASSERT_RCP_IS_OWNING(b_rcp, raw_ptr, 2);
 }
 
 
 TEUCHOS_UNIT_TEST( RCP, move_construct_nonnull )
 {
-  RCP<A> a_rcp(new A);
+  A *raw_ptr = new A;
+  RCP<A> a_rcp(raw_ptr);
   RCP<A> b_rcp(std::move(a_rcp));
-  TEST_EQUALITY_CONST(a_rcp.get(), 0);
-  TEST_EQUALITY_CONST(a_rcp.getRawPtr(), 0);
-  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
-  TEST_EQUALITY_CONST(a_rcp.strong_count(), 0);
-  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
-  TEST_EQUALITY_CONST(a_rcp.has_ownership(), false);
-  TEST_INEQUALITY_CONST(b_rcp.get(), 0);
-  TEST_INEQUALITY_CONST(b_rcp.getRawPtr(), 0);
-  TEST_EQUALITY_CONST(b_rcp.strength(), RCP_STRONG);
-  TEST_EQUALITY_CONST(b_rcp.strong_count(), 1);
-  TEST_EQUALITY_CONST(b_rcp.weak_count(), 0);
-  TEST_EQUALITY_CONST(b_rcp.has_ownership(), true);
+  ASSERT_RCP_IS_NULL(a_rcp);
+  ASSERT_RCP_IS_OWNING(b_rcp, raw_ptr, 1);
 }
 
 
@@ -173,55 +184,52 @@ TEUCHOS_UNIT_TEST( RCP, assign_self_null )
 {
   RCP<A> a_rcp;
   a_rcp = a_rcp;
-  TEST_ASSERT(is_null(a_rcp));
+  ASSERT_RCP_IS_NULL(a_rcp);
 }
 
 
 TEUCHOS_UNIT_TEST( RCP, copy_assign_self_nonnull )
 {
-  RCP<A> a_rcp(new A);
-  A *a_raw_ptr = a_rcp.getRawPtr();
+  A *raw_ptr = new A;
+  RCP<A> a_rcp(raw_ptr);
   a_rcp = a_rcp;
-  TEST_ASSERT(nonnull(a_rcp));
-  TEST_EQUALITY(a_rcp.getRawPtr(), a_raw_ptr);
+  ASSERT_RCP_IS_OWNING(a_rcp, raw_ptr, 1);
 }
 
 
 TEUCHOS_UNIT_TEST( RCP, copy_assign_nonnull )
 {
-  RCP<A> a_rcp(new A);
+  A *raw_ptr = new A;
+  RCP<A> a_rcp(raw_ptr);
   RCP<A> b_rcp;
   b_rcp = a_rcp;
-  TEST_EQUALITY(b_rcp.get(), a_rcp.get());
-  TEST_EQUALITY(b_rcp.getRawPtr(), a_rcp.getRawPtr());
-  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
-  TEST_EQUALITY_CONST(b_rcp.strength(), RCP_STRONG);
-  TEST_EQUALITY_CONST(a_rcp.strong_count(), 2);
-  TEST_EQUALITY_CONST(b_rcp.strong_count(), 2);
-  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
-  TEST_EQUALITY_CONST(b_rcp.weak_count(), 0);
-  TEST_EQUALITY_CONST(a_rcp.has_ownership(), true);
-  TEST_EQUALITY_CONST(b_rcp.has_ownership(), true);
+  ASSERT_RCP_IS_OWNING(a_rcp, raw_ptr, 2);
+  ASSERT_RCP_IS_OWNING(b_rcp, raw_ptr, 2);
 }
 
 
 TEUCHOS_UNIT_TEST( RCP, move_assign_nonnull )
 {
-  RCP<A> a_rcp(new A);
+  A *raw_ptr = new A;
+  RCP<A> a_rcp(raw_ptr);
   RCP<A> b_rcp;
   b_rcp = std::move(a_rcp);
-  TEST_EQUALITY_CONST(a_rcp.get(), 0);
-  TEST_EQUALITY_CONST(a_rcp.getRawPtr(), 0);
-  TEST_EQUALITY_CONST(a_rcp.strength(), RCP_STRONG);
-  TEST_EQUALITY_CONST(a_rcp.strong_count(), 0);
-  TEST_EQUALITY_CONST(a_rcp.weak_count(), 0);
-  TEST_EQUALITY_CONST(a_rcp.has_ownership(), false);
-  TEST_INEQUALITY_CONST(b_rcp.get(), 0);
-  TEST_INEQUALITY_CONST(b_rcp.getRawPtr(), 0);
-  TEST_EQUALITY_CONST(b_rcp.strength(), RCP_STRONG);
-  TEST_EQUALITY_CONST(b_rcp.strong_count(), 1);
-  TEST_EQUALITY_CONST(b_rcp.weak_count(), 0);
-  TEST_EQUALITY_CONST(b_rcp.has_ownership(), true);
+  ASSERT_RCP_IS_NULL(a_rcp);
+  ASSERT_RCP_IS_OWNING(b_rcp, raw_ptr, 1);
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, move_assign_nonnull_to_nonnull )
+{
+  A *raw_ptr1 = new A;
+  RCP<A> a_rcp(raw_ptr1);
+  ASSERT_RCP_IS_OWNING(a_rcp, raw_ptr1, 1);
+  A *raw_ptr2 = new A;
+  RCP<A> b_rcp(raw_ptr2);
+  ASSERT_RCP_IS_OWNING(b_rcp, raw_ptr2, 1);
+  b_rcp = std::move(a_rcp);
+  ASSERT_RCP_IS_NULL(a_rcp);
+  ASSERT_RCP_IS_OWNING(b_rcp, raw_ptr1, 1);
 }
 
 
