@@ -53,6 +53,21 @@
 #  include "Kokkos_Core.hpp"
 #endif // HAVE_TEUCHOSCORE_KOKKOSCORE
 
+namespace {
+
+void printOneCharAtATime(const std::string &str_name, const std::string &str)
+{
+  std::cerr << str_name << " one char at at time (length="<<str.length()<<") = [";
+  for (size_t i = 0; i < str.length(); ++i)
+    std::cerr << "'"<<str[i]<<"', ";
+  std::cerr << "]\n";
+}
+
+#define PRINT_STR_ONE_CHAR_AT_AT_TIME(str) \
+  printOneCharAtATime(#str, str);
+
+}
+
 
 
 namespace Teuchos {
@@ -135,8 +150,20 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
   // See if we should suppress the startup banner
   bool printStartupBanner = true;
   const std::string suppress_option("--teuchos-suppress-startup-banner");
+  std::cerr << "suppress_option = '"<<suppress_option<<"'\n";
+  PRINT_STR_ONE_CHAR_AT_AT_TIME(suppress_option);
   for ( int opt_i = 0; opt_i < *argc; ++opt_i ) {
-    if ( suppress_option == (*argv)[opt_i] ) {
+    std::cerr << "(*argv)["<<opt_i<<"] = '" << (*argv)[opt_i] << "'\n";
+    const std::string arg_i((*argv)[opt_i]);
+    std::cerr << "arg_i = '"+arg_i+"'\n";
+    PRINT_STR_ONE_CHAR_AT_AT_TIME(arg_i);
+    std::cerr << "arg_i.length() = "<<arg_i.length()<<"\n";
+    std::cerr << "suppress_option.compare((*argv)["<<opt_i<<"]) = "
+      << suppress_option.compare((*argv)[opt_i]) << "\n";
+    std::cerr << "suppress_option == arg_i = "
+      << (suppress_option == arg_i) << "\n";
+    if ( suppress_option.compare((*argv)[opt_i]) == 0) {
+      std::cerr << "Suppress arg found!\n";
       // We are suppressing the output!
       printStartupBanner = false;
       // Remove this option!
