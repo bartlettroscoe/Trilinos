@@ -11,11 +11,13 @@ fi
 
 set -x
 
-source $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-config-build.sh
+source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
+
+#source $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-config-build.sh
 
 set -x
 
 atdm_run_script_on_compute_node \
-  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-test.sh \
-  $PWD/ctest-s-driver-test.out \
+  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh \
+  $PWD/ctest-s-driver.out \
   ${SALLOC_CTEST_TIME_LIMIT_MINUTES}
