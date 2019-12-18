@@ -61,8 +61,12 @@ if [[ "$ATDM_CONFIG_COMPILER" == "ARM-19.2_OPENMPI-3.1.4" ]]; then
   module load armpl/19.2.0
   module load ninja
   export LAPACK_ROOT="$ARMPL_LIB"
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-larmpl_ilp64_mp"
-  export ATDM_CONFIG_BLAS_LIBS="-L${LAPACK_ROOT};-larmpl_ilp64_mp"
+  export ATDM_CONFIG_BLAS_LIBRARY_DIRS="${LAPACK_ROOT}"
+  export ATDM_CONFIG_BLAS_LIBRARY_NAMES="armpl_lp64_mp;omp"
+  export ATDM_CONFIG_LAPACK_LIBRARY_DIRS="${LAPACK_ROOT}"
+  export ATDM_CONFIG_LAPACK_LIBRARY_NAMES="armpl_lp64_mp;omp"
+  #export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-larmpl_ilp64_mp;-lomp"
+  #export ATDM_CONFIG_BLAS_LIBS="-L${LAPACK_ROOT};-larmpl_ilp64_mp;-lomp"
   export OMPI_CC=`which armclang`
   export OMPI_CXX=`which armclang++`
   export OMPI_FC=`which armflang`
