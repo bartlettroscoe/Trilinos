@@ -26,7 +26,7 @@ function list_contains() {
 }
 
 
-function assert_selected_system_matches_known_system_type_mathces() {
+function assert_selected_system_matches_known_system_type_matches() {
 
   if [[ "${systemNameTypeMatchedList}" == "" ]] ; then
     return 0
