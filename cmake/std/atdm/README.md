@@ -1052,11 +1052,11 @@ $ bsub -x -Is -n 20 \
 Once logged on a supported ATS-2 system like 'vortex' (SRN), one can either
 build and configure on a login node or a compute node.  But one must always
 run the tests from the launch node (allocated using 'bsub').  Make sure to
-setup SSH keys are set up as described in `/opt/VORTEX_INTRO` before trying to
-do anything.
+setup SSH keys as described in `/opt/VORTEX_INTRO` before trying to do
+anything.
 
 For example, to configure, build and run the tests for the default
-`cuda-debug` build for `Tpetra`` (after cloning Trilinos on the `develop`
+`cuda-debug` build for `Tpetra` (after cloning Trilinos on the 'develop'
 branch), run the following from the login node on 'vortex':
 
 ```bash
@@ -1149,11 +1149,11 @@ $ ./checkin-test-atdm.sh <buildname0> <buildname1> ... \
 ```
 
 **NOTES:**
-- Do NOT do `module purge` before loading the environment. Simply start off with
-  a clean default environment (through a fresh login) on 'vortex'.
-- Please do not build on the launch node after logging noto it using `bsub -Is
-  bash`.  That takes up CPU resources that need to be used by all users of the
-  cluster to run individual MPI jobs.
+- Do **NOT** do `module purge` before loading the environment. Simply start
+  off with a clean default environment (through a fresh login) on 'vortex'.
+- Please do not build on the launch node after logging onto it using `bsub -Is
+  bash`.  That takes up CPU resources on the launch node that need to be used
+  by all users of the cluster to run individual MPI jobs.
 - The `lrun` command is just a simpler wrapper around `jsrun` that is meant to
   be more similar to the SLURM `srun` comamnd.  That is, `lrun -n <N> <cmnd>`
   should behave similarly to `jsrun --np <N> <cmnd>`.
