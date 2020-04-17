@@ -8,6 +8,7 @@ ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${CURRENT_SCRIPTS_DIR}/../..`
 # Test compiler parsing
 #
 
+
 testAllDefaults() {
   ATDM_CONFIG_BUILD_NAME=default
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
@@ -21,6 +22,7 @@ testAllDefaults() {
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_PTHREADS} OFF
 }
 
+
 testCompilerClangAndDefaults() {
   ATDM_CONFIG_BUILD_NAME=clang
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
@@ -33,6 +35,7 @@ testCompilerClangAndDefaults() {
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_CUDA} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_PTHREADS} OFF
 }
+
 
 testCompilerClang() {
 
@@ -54,6 +57,7 @@ testCompilerClang() {
 
 }
 
+
 testCompilerCuda() {
 
   ATDM_CONFIG_BUILD_NAME=cuda
@@ -69,6 +73,7 @@ testCompilerCuda() {
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} CUDA-9.2_GNU-7.2.0
 
 }
+
 
 testCompilerIntel() {
 
@@ -91,8 +96,24 @@ testCompilerIntel() {
 }
 
 
+testKokkosArch() {
 
+  ATDM_CONFIG_BUILD_NAME=default-AMDAVX
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} DEFAULT
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} AMDAVX
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_SHARED_LIBS} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_NODE_TYPE} SERIAL
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_OPENMP} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_CUDA} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_PTHREADS} OFF
 
+  ATDM_CONFIG_BUILD_NAME=default-HSW
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} HSW
+
+}
 
 #
 # Run the unit tests
