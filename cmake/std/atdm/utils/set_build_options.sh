@@ -54,6 +54,8 @@ fi
 ATDM_UTILS_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 export ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${ATDM_UTILS_SCRIPT_DIR}/..`
 
+. ${ATDM_CONFIG_SCRIPT_DIR}/utils/define_atdm_match_keyword.sh
+
 echo "Setting compiler and build options for build-name '${ATDM_CONFIG_BUILD_NAME}'"
 
 # Set the defaults
@@ -149,7 +151,7 @@ fi
 export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
 . ${ATDM_UTILS_SCRIPT_DIR}/kokkos_arch_array.sh
 for kokkos_arch in ${kokkos_arch_array[@]} ; do
-  if [[ $ATDM_CONFIG_BUILD_NAME == *"-${kokkos_arch}"* ]]; then
+  if atdm_match_keyword ${ATDM_CONFIG_BUILD_NAME} ${kokkos_arch}; then
     export ATDM_CONFIG_KOKKOS_ARCH=${kokkos_arch}
     break
   fi

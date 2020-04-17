@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Get ATDM_CONFIG_SCRIPT_DIR
 CURRENT_SCRIPTS_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${CURRENT_SCRIPTS_DIR}/../..`
 
@@ -129,6 +128,36 @@ testKokkosArch() {
   ATDM_CONFIG_BUILD_NAME=default-TX2-ARMv8-ThunderX
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} ARMv8-ThunderX
+
+  # At beginning lower -
+  ATDM_CONFIG_BUILD_NAME=hsw-default
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} HSW
+
+  # At beginning upper _
+  ATDM_CONFIG_BUILD_NAME=KNL_default
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} KNL
+
+  # In middle lower -
+  ATDM_CONFIG_BUILD_NAME=default-hsw-dummy
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} HSW
+
+  # In middle upper _
+  ATDM_CONFIG_BUILD_NAME=default_KNL_dummy
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} KNL
+
+  # At end lower -
+  ATDM_CONFIG_BUILD_NAME=default-hsw
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} HSW
+
+  # AT end upper _
+  ATDM_CONFIG_BUILD_NAME=default_KNL
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} KNL
 
 }
 

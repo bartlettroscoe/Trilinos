@@ -115,7 +115,7 @@ href="#spack-rhel-environment">spack-rhel</a> will attempted to be loaded.
 <a name="kokkos_arch"/>
 
 **`<kokkos_arch>`:** The `<build-name>` string can also contain keywords to
-determine the `KOKKOS_ARCH` option of the build.  This is the case-sensitive
+determine the `KOKKOS_ARCH` option of the build.  This is the case-insensitive
 architecture name that is recognized by the CMake
 [KOKKOS_ARCH](https://trilinos.org/docs/files/TrilinosBuildReference.html#configuring-with-kokkos-and-advanced-back-ends)
 configure option for Trilinos and Kokkos.  Some common supported Kokkos
@@ -126,12 +126,9 @@ supported by the current system or selected compiler, then the `load-env.sh`
 script will return an error message listing the value choices for
 `KOKKOS_ARCH` for each supported compiler.
 
-Note that currently only a single `KOKKOS_ARCH` value is recognized in the
-`<build-name>` string and it must be proceeded a dash '-' such as with
-`intel-KNL` or `cuda-Kepler37`.  This setup does not currently support
-specifying multiple `KOKKOS_ARCH` values (since there is no example yet where
-that would be needed or useful) but such functionality could be supported in
-the future if needed.
+This setup does not currently support specifying multiple `KOKKOS_ARCH` values
+(since there is no example yet where that would be needed or useful) but such
+functionality could be supported in the future if needed.
 
 <a name="compiler"/>
 
