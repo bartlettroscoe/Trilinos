@@ -136,4 +136,4 @@ testKokkosArch() {
 # Run the unit tests
 #
 
-. ${ATDM_CONFIG_SCRIPT_DIR}/shunit2/shunit2
+. ${ATDM_CONFIG_SCRIPT_DIR}/test/shunit2/shunit2
