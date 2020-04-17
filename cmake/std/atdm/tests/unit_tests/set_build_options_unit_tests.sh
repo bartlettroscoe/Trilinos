@@ -98,6 +98,7 @@ testCompilerIntel() {
 
 testKokkosArch() {
 
+  # Test first arch and defaults for everything else
   ATDM_CONFIG_BUILD_NAME=default-AMDAVX
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} DEFAULT
@@ -109,9 +110,25 @@ testKokkosArch() {
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_CUDA} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_PTHREADS} OFF
 
+  # Test arch in the middle
   ATDM_CONFIG_BUILD_NAME=default-HSW
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} HSW
+
+  # Test arch at the end
+  ATDM_CONFIG_BUILD_NAME=default-TX2
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} TX2
+
+  # Match the first in the list of arch
+  ATDM_CONFIG_BUILD_NAME=default-ARMv8-ThunderX-TX2
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} ARMv8-ThunderX
+
+  # Match the first in the list of arch, even if listed later
+  ATDM_CONFIG_BUILD_NAME=default-TX2-ARMv8-ThunderX
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} ARMv8-ThunderX
 
 }
 
