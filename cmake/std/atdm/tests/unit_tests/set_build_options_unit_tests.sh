@@ -5,10 +5,10 @@ CURRENT_SCRIPTS_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${CURRENT_SCRIPTS_DIR}/../..`
 
 #
-# Define the unit tests
+# Test compiler parsing
 #
 
-testDefault() {
+testAllDefaults() {
   ATDM_CONFIG_BUILD_NAME=default
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} DEFAULT
@@ -20,6 +20,79 @@ testDefault() {
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_CUDA} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_PTHREADS} OFF
 }
+
+testCompilerClangAndDefaults() {
+  ATDM_CONFIG_BUILD_NAME=clang
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} CLANG
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_KOKKOS_ARCH} DEFAULT
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_SHARED_LIBS} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_NODE_TYPE} SERIAL
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_OPENMP} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_CUDA} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_PTHREADS} OFF
+}
+
+testCompilerClang() {
+
+  ATDM_CONFIG_BUILD_NAME=clang-5.0.1
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} CLANG-5.0.1
+
+  ATDM_CONFIG_BUILD_NAME=before_clang-5.0.1_after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} CLANG-5.0.1
+
+  ATDM_CONFIG_BUILD_NAME=before-clang-5.0.1-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} CLANG-5.0.1
+
+  ATDM_CONFIG_BUILD_NAME=clang-7.0.1
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} CLANG-7.0.1
+
+}
+
+testCompilerCuda() {
+
+  ATDM_CONFIG_BUILD_NAME=cuda
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} CUDA
+
+  ATDM_CONFIG_BUILD_NAME=cuda-9.2
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} CUDA-9.2
+
+  ATDM_CONFIG_BUILD_NAME=cuda-9.2-gnu-7.2.0
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} CUDA-9.2_GNU-7.2.0
+
+}
+
+testCompilerIntel() {
+
+  ATDM_CONFIG_BUILD_NAME=intel
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} INTEL
+
+  ATDM_CONFIG_BUILD_NAME=intel-17
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} INTEL-17.0.1
+
+  ATDM_CONFIG_BUILD_NAME=intel-17.0.1
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} INTEL-17.0.1
+
+  ATDM_CONFIG_BUILD_NAME=intel-18
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} INTEL-18.0.5
+
+}
+
+
+
+
 
 #
 # Run the unit tests
