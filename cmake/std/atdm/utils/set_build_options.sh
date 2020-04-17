@@ -145,70 +145,112 @@ fi
 # have the compiler keywords embedded in them.  For example we need to match
 # 'cuda-10.0-gnu-7.4.0' before we match 'gnu-7.4.0'.
 
-
-# Set the KOKKOS_ARCH
-if [[ $ATDM_CONFIG_BUILD_NAME == *"-AMDAVX"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=AMDAVX
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-ARMv8-ThunderX"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-ThunderX
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-ARMv80"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=ARMv80
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-ARMv81"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=ARMv81
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-BDW"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=BDW
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-BGQ"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=BGQ
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-HSW"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=HSW
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler30"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Kepler30
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler32"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Kepler32
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler35"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Kepler35
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler37"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Kepler37
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-KNC"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=KNC
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-KNL"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=KNL
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Maxwell50"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Maxwell50
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Maxwell52"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Maxwell52
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Maxwell53"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Maxwell53
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Pascal60"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Pascal60
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Pascal61"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Pascal61
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Power7"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Power7
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Power8"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Power8
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Power9"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Power9
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-SKX"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=SKX
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-SNB"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=SNB
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Volta70"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Volta70
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Volta72"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=Volta72
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-WSM"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=WSM
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-TX2"* ]]; then
-  export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-TX2
-else
-  export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
-  if [[ $ATDM_CONFIG_VERBOSE == "1" ]] ; then
-    echo "No KOKKOS_ARCH specified so using system default"
+# Set KOKKOS_ARCH
+export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
+kokkos_arch_array=(
+  AMDAVX
+  ARMv8-ThunderX
+  ARMv80
+  ARMv81
+  BDW
+  BGQ
+  HSW
+  Kepler30
+  Kepler32
+  Kepler35
+  Kepler37
+  KNC
+  KNL
+  Maxwell50
+  Maxwell52
+  Maxwell53
+  Pascal60
+  Pascal61
+  Power7
+  Power8
+  Power9
+  SKX
+  SNB
+  Volta70
+  Volta72
+  WSM
+  TX2
+  )
+for kokkos_arch in ${kokkos_arch_array[@]} ; do
+  if [[ $ATDM_CONFIG_BUILD_NAME == *"-${kokkos_arch}"* ]]; then
+    export ATDM_CONFIG_KOKKOS_ARCH=${kokkos_arch}
+    break
   fi
-  # NOTE: <system_name>/environment.sh may set ATDM_CONFIG_KOKKOS_ARCH="" as
-  # an allowed value!
+done
+if   [[ $ATDM_CONFIG_KOKKOS_ARCH == "DEFAULT" ]] \
+  && [[ $ATDM_CONFIG_VERBOSE == "1" ]] \
+   ; then
+  echo "No KOKKOS_ARCH specified so using system default"
 fi
+
+## Set the KOKKOS_ARCH
+#if [[ $ATDM_CONFIG_BUILD_NAME == *"-AMDAVX"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=AMDAVX
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-ARMv8-ThunderX"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-ThunderX
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-ARMv80"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=ARMv80
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-ARMv81"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=ARMv81
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-BDW"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=BDW
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-BGQ"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=BGQ
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-HSW"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=HSW
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler30"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Kepler30
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler32"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Kepler32
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler35"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Kepler35
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler37"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Kepler37
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-KNC"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=KNC
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-KNL"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=KNL
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Maxwell50"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Maxwell50
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Maxwell52"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Maxwell52
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Maxwell53"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Maxwell53
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Pascal60"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Pascal60
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Pascal61"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Pascal61
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Power7"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Power7
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Power8"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Power8
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Power9"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Power9
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-SKX"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=SKX
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-SNB"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=SNB
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Volta70"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Volta70
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Volta72"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=Volta72
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-WSM"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=WSM
+#elif [[ $ATDM_CONFIG_BUILD_NAME == *"-TX2"* ]]; then
+#  export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-TX2
+#else
+#  export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
+#  if [[ $ATDM_CONFIG_VERBOSE == "1" ]] ; then
+#    echo "No KOKKOS_ARCH specified so using system default"
+#  fi
+#  # NOTE: <system_name>/environment.sh may set ATDM_CONFIG_KOKKOS_ARCH="" as
+#  # an allowed value!
+#fi
 
 # Set the optimization level
 # Defaults to debug
