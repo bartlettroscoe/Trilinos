@@ -161,6 +161,60 @@ testKokkosArch() {
 
 }
 
+
+testBuildType() {
+
+  ATDM_CONFIG_BUILD_NAME=default
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
+
+  ATDM_CONFIG_BUILD_NAME=defaultopt
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
+
+  ATDM_CONFIG_BUILD_NAME=defaultrelease
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
+
+  ATDM_CONFIG_BUILD_NAME=defaultoptend
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
+
+  ATDM_CONFIG_BUILD_NAME=defaultreleaseend
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
+
+  ATDM_CONFIG_BUILD_NAME=default-release-debug
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} RELEASE-DEBUG
+
+  ATDM_CONFIG_BUILD_NAME=default_release_debug
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} RELEASE-DEBUG
+
+  ATDM_CONFIG_BUILD_NAME=default_opt-dbg
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} RELEASE-DEBUG
+
+  ATDM_CONFIG_BUILD_NAME=default-opt_dbg
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} RELEASE-DEBUG
+
+  ATDM_CONFIG_BUILD_NAME=default-release
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} RELEASE 
+
+  ATDM_CONFIG_BUILD_NAME=default-debug
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
+
+  ATDM_CONFIG_BUILD_NAME=default-dbg
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
+
+}
+
+
 #
 # Run the unit tests
 #
