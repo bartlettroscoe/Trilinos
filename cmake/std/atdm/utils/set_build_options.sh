@@ -200,11 +200,9 @@ elif atdm_match_buildname_keyword serial; then
 fi
 
 # Use CUDA RDC or not
-if [[ $ATDM_CONFIG_BUILD_NAME == *"-no-rdc"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"_no-rdc"* ]]; then
+if   atdm_match_buildname_keyword no-rdc; then
   export ATDM_CONFIG_CUDA_RDC=OFF
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"-rdc"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"_rdc"* ]]; then
+elif atdm_match_buildname_keyword rdc; then
   export ATDM_CONFIG_CUDA_RDC=ON
 fi
 

@@ -284,6 +284,60 @@ testNodeType() {
 }
 
 
+
+testRDC() {
+
+  ATDM_CONFIG_BUILD_NAME=default
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-rdc
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} ON
+
+  ATDM_CONFIG_BUILD_NAME=default_rdc
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-rdcs
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default_rdc-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} ON
+
+  ATDM_CONFIG_BUILD_NAME=default_RDC-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} ON
+
+  ATDM_CONFIG_BUILD_NAME=default_rdc_after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-no-rdc
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default_no-rdc
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default_rdc_no-rdc
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-rdc-no-rdc
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default_rdc_no-rdc-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} OFF
+
+}
+
+
 testFPIC() {
 
   ATDM_CONFIG_BUILD_NAME=default
