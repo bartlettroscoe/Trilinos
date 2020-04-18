@@ -65,6 +65,11 @@ export ATDM_CONFIG_NODE_TYPE=SERIAL
 export ATDM_CONFIG_USE_OPENMP=OFF
 export ATDM_CONFIG_USE_CUDA=OFF
 export ATDM_CONFIG_USE_PTHREADS=OFF
+export ATDM_CONFIG_CUDA_RDC=OFF
+export ATDM_CONFIG_FPIC=OFF
+export ATDM_CONFIG_COMPLEX=OFF
+export ATDM_CONFIG_SHARED_LIBS=OFF
+export ATDM_CONFIG_PT_PACKAGES=OFF
 
 # Process system custom build logic
 export ATDM_CONFIG_CUSTOM_COMPILER_SET=0
@@ -195,7 +200,6 @@ elif atdm_match_buildname_keyword serial; then
 fi
 
 # Use CUDA RDC or not
-export ATDM_CONFIG_CUDA_RDC=OFF
 if [[ $ATDM_CONFIG_BUILD_NAME == *"-no-rdc"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"_no-rdc"* ]]; then
   export ATDM_CONFIG_CUDA_RDC=OFF
@@ -205,14 +209,11 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"-rdc"* ]] \
 fi
 
 # Use -fPIC or not
-export ATDM_CONFIG_FPIC=OFF
-if [[ $ATDM_CONFIG_BUILD_NAME == *"-fpic"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"_fpic"* ]]; then
+if atdm_match_buildname_keyword fpic; then
   export ATDM_CONFIG_FPIC=ON
 fi
 
 # Enable complex (double) data-types or not
-export ATDM_CONFIG_COMPLEX=OFF
 if [[ $ATDM_CONFIG_BUILD_NAME == *"no-complex"* ]]; then
   export ATDM_CONFIG_COMPLEX=OFF
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"complex"* ]]; then
@@ -220,7 +221,6 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"complex"* ]]; then
 fi
 
 # Set 'static' or 'shared'
-export ATDM_CONFIG_SHARED_LIBS=OFF
 if [[ $ATDM_CONFIG_BUILD_NAME == *"shared"* ]]; then
   export ATDM_CONFIG_SHARED_LIBS=ON
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"static"* ]]; then
@@ -228,7 +228,6 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"static"* ]]; then
 fi
 
 # Allow enable of all Primary Tested (pt) packages are not
-export ATDM_CONFIG_PT_PACKAGES=OFF
 if [[ $ATDM_CONFIG_BUILD_NAME == *"-pt" ]] || \
   [[ $ATDM_CONFIG_BUILD_NAME == *"_pt" ]] ; then
   export ATDM_CONFIG_PT_PACKAGES=ON
