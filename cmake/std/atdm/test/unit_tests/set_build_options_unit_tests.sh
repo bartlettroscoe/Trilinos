@@ -450,9 +450,29 @@ testPrimaryTested() {
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} ON
 
+  ATDM_CONFIG_BUILD_NAME=default-PT
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-pt-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-pts
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} OFF
+
   ATDM_CONFIG_BUILD_NAME=default_pt
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} ON
+
+  ATDM_CONFIG_BUILD_NAME=default_PT-fater
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} ON
+
+  ATDM_CONFIG_BUILD_NAME=default_PTS-fater
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} OFF
 
 }
 

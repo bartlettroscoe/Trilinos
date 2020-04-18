@@ -226,8 +226,7 @@ elif atdm_match_buildname_keyword static; then
 fi
 
 # Allow enable of all Primary Tested (pt) packages are not
-if [[ $ATDM_CONFIG_BUILD_NAME == *"-pt" ]] || \
-  [[ $ATDM_CONFIG_BUILD_NAME == *"_pt" ]] ; then
+if atdm_match_buildname_keyword pt; then
   export ATDM_CONFIG_PT_PACKAGES=ON
 fi
 
