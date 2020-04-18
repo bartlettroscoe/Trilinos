@@ -364,7 +364,15 @@ testComplex() {
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} ON
 
-  ATDM_CONFIG_BUILD_NAME=default-complex-after
+  ATDM_CONFIG_BUILD_NAME=default-COMPLEX
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-complexs
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default_complex_after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} ON
 
@@ -372,7 +380,15 @@ testComplex() {
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} OFF
 
+  ATDM_CONFIG_BUILD_NAME=default-nos-complex
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} ON
+
   ATDM_CONFIG_BUILD_NAME=default-no-complex-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-no-COMPLEX-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} OFF
 

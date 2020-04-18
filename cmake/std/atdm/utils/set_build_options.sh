@@ -212,9 +212,9 @@ if atdm_match_buildname_keyword fpic; then
 fi
 
 # Enable complex (double) data-types or not
-if [[ $ATDM_CONFIG_BUILD_NAME == *"no-complex"* ]]; then
+if atdm_match_buildname_keyword no-complex; then
   export ATDM_CONFIG_COMPLEX=OFF
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"complex"* ]]; then
+elif atdm_match_buildname_keyword complex; then
   export ATDM_CONFIG_COMPLEX=ON
 fi
 
