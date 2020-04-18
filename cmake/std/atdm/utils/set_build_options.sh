@@ -44,13 +44,11 @@ if [ "$called" == "$0" ] ; then
 fi
 unset called
 
-# Assert that ATDM_CONFIG_BUILD_NAME is set!
 if [ -z "$ATDM_CONFIG_BUILD_NAME" ] ; then
   echo "Error, must set ATDM_CONFIG_BUILD_NAME in env!"
   return
 fi
 
-# Get ATDM_CONFIG_SCRIPT_DIR
 ATDM_UTILS_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 export ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${ATDM_UTILS_SCRIPT_DIR}/..`
 
@@ -82,60 +80,60 @@ fi
 if [[ "${ATDM_CONFIG_COMPILER}" != "DEFAULT" ]] ; then
   # Custom compile already set
   export ATDM_CONFIG_CUSTOM_COMPILER_SET=1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"default"* ]]; then
+elif atdm_match_buildname_keyword default; then
   export ATDM_CONFIG_COMPILER=DEFAULT
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-8.0"* ]]; then
+elif atdm_match_buildname_keyword cuda-8.0; then
   export ATDM_CONFIG_COMPILER=CUDA-8.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.0"* ]]; then
+elif atdm_match_buildname_keyword cuda-9.0; then
   export ATDM_CONFIG_COMPILER=CUDA-9.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2-gnu-7.2.0"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2_gnu-7.2.0"* ]]; then
+elif atdm_match_any_buildname_keyword cuda-9.2-gnu-7.2.0 cuda-9.2_gnu-7.2.0 \
+  ; then
   export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-7.2.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2"* ]]; then
+elif atdm_match_buildname_keyword cuda-9.2; then
   export ATDM_CONFIG_COMPILER=CUDA-9.2
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0-gnu-7.4.0"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0_gnu-7.4.0"* ]]; then
+elif atdm_match_any_buildname_keyword cuda-10.0-gnu-7.4.0 cuda-10.0_gnu-7.4.0 \
+  ; then
   export ATDM_CONFIG_COMPILER=CUDA-10.0_GNU-7.4.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1-gnu-7.2.0"* ]] \
-  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1_gnu-7.2.0"* ]]; then
+elif atdm_match_any_buildname_keyword cuda-10.1-gnu-7.2.0 cuda-10.1_gnu-7.2.0 \
+  ; then
   export ATDM_CONFIG_COMPILER=CUDA-10.1_GNU-7.2.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1"* ]]; then
+elif atdm_match_buildname_keyword cuda-10.1; then
   export ATDM_CONFIG_COMPILER=CUDA-10.1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10"* ]]; then
+elif atdm_match_buildname_keyword cuda-10; then
   export ATDM_CONFIG_COMPILER=CUDA-10
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
+elif atdm_match_buildname_keyword cuda; then
   export ATDM_CONFIG_COMPILER=CUDA
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.8.4"* ]]; then
+elif atdm_match_buildname_keyword gnu-4.8.4; then
   export ATDM_CONFIG_COMPILER=GNU-4.8.4
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.9.3"* ]]; then
+elif atdm_match_buildname_keyword gnu-4.9.3; then
   export ATDM_CONFIG_COMPILER=GNU-4.9.3
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-6.1.0"* ]]; then
+elif atdm_match_buildname_keyword gnu-6.1.0; then
   export ATDM_CONFIG_COMPILER=GNU-6.1.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.2.0"* ]]; then
+elif atdm_match_buildname_keyword gnu-7.2.0; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.4.0"* ]]; then
+elif atdm_match_buildname_keyword gnu-7.4.0; then
   export ATDM_CONFIG_COMPILER=GNU-7.4.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu"* ]]; then
+elif atdm_match_buildname_keyword gnu; then
   export ATDM_CONFIG_COMPILER=GNU
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-17.0.1"* ]]; then
+elif atdm_match_buildname_keyword intel-17.0.1; then
  export ATDM_CONFIG_COMPILER=INTEL-17.0.1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-17"* ]]; then
+elif atdm_match_buildname_keyword intel-17; then
  export ATDM_CONFIG_COMPILER=INTEL-17.0.1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2"* ]]; then
+elif atdm_match_buildname_keyword intel-18.0.2; then
  export ATDM_CONFIG_COMPILER=INTEL-18.0.2
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.5"* ]]; then
+elif atdm_match_buildname_keyword intel-18.0.5; then
  export ATDM_CONFIG_COMPILER=INTEL-18.0.5
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18"* ]]; then
+elif atdm_match_buildname_keyword intel-18; then
  export ATDM_CONFIG_COMPILER=INTEL-18.0.5
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel"* ]]; then
+elif atdm_match_buildname_keyword intel; then
  export ATDM_CONFIG_COMPILER=INTEL
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-3.9.0"* ]]; then
+elif atdm_match_buildname_keyword clang-3.9.0; then
   export ATDM_CONFIG_COMPILER=CLANG-3.9.0
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5.0.1"* ]]; then
+elif atdm_match_buildname_keyword clang-5.0.1; then
   export ATDM_CONFIG_COMPILER=CLANG-5.0.1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-7.0.1"* ]]; then
+elif atdm_match_buildname_keyword clang-7.0.1; then
   export ATDM_CONFIG_COMPILER=CLANG-7.0.1
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang"* ]]; then
+elif atdm_match_buildname_keyword clang; then
   export ATDM_CONFIG_COMPILER=CLANG
 else
   echo
@@ -151,7 +149,7 @@ fi
 export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
 . ${ATDM_UTILS_SCRIPT_DIR}/kokkos_arch_array.sh
 for kokkos_arch in ${kokkos_arch_array[@]} ; do
-  if atdm_match_keyword ${ATDM_CONFIG_BUILD_NAME} ${kokkos_arch}; then
+  if atdm_match_buildname_keyword ${kokkos_arch}; then
     export ATDM_CONFIG_KOKKOS_ARCH=${kokkos_arch}
     break
   fi
@@ -163,28 +161,28 @@ if   [[ $ATDM_CONFIG_KOKKOS_ARCH == "DEFAULT" ]] \
 fi
 
 # Set ATDM_CONFIG_BUILD_TYPE
-if atdm_match_any_keyword "$ATDM_CONFIG_BUILD_NAME" \
+if atdm_match_any_buildname_keyword \
     release-debug release_debug opt-dbg opt_dbg \
   ; then
   export ATDM_CONFIG_BUILD_TYPE=RELEASE-DEBUG
-elif atdm_match_any_keyword "$ATDM_CONFIG_BUILD_NAME" \
+elif atdm_match_any_buildname_keyword \
   release opt \
   ; then
   export ATDM_CONFIG_BUILD_TYPE=RELEASE
-elif atdm_match_any_keyword "$ATDM_CONFIG_BUILD_NAME" \
+elif atdm_match_any_buildname_keyword \
   debug dbg \
   ; then
   export ATDM_CONFIG_BUILD_TYPE=DEBUG
 fi
 
 # Set the node type vars
-if   atdm_match_keyword "$ATDM_CONFIG_BUILD_NAME" cuda; then
+if   atdm_match_buildname_keyword cuda; then
   export ATDM_CONFIG_USE_CUDA=ON
   export ATDM_CONFIG_NODE_TYPE=CUDA
-elif atdm_match_keyword "$ATDM_CONFIG_BUILD_NAME" openmp; then
+elif atdm_match_buildname_keyword openmp; then
   export ATDM_CONFIG_USE_OPENMP=ON
   export ATDM_CONFIG_NODE_TYPE=OPENMP
-elif atdm_match_keyword "$ATDM_CONFIG_BUILD_NAME" pthread; then
+elif atdm_match_buildname_keyword pthread; then
   echo
   echo "***"
   echo "*** ERROR: The Kokkos Pthreads backend is no longer supported (see TRIL-272)!"
@@ -192,7 +190,7 @@ elif atdm_match_keyword "$ATDM_CONFIG_BUILD_NAME" pthread; then
   echo "***"
   echo
   return
-elif atdm_match_keyword "$ATDM_CONFIG_BUILD_NAME" serial; then
+elif atdm_match_buildname_keyword serial; then
   export ATDM_CONFIG_NODE_TYPE=SERIAL
 fi
 

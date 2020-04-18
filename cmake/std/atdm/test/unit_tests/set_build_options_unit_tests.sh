@@ -73,6 +73,14 @@ testCompilerCuda() {
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} CUDA-9.2_GNU-7.2.0
 
+  ATDM_CONFIG_BUILD_NAME=cuda-9.2_gnu-7.2.0
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} CUDA-9.2_GNU-7.2.0
+
+  ATDM_CONFIG_BUILD_NAME=cuda-10.0-gnu-7.4.0
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} CUDA-10.0_GNU-7.4.0
+
 }
 
 
@@ -170,19 +178,19 @@ testBuildType() {
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
 
-  ATDM_CONFIG_BUILD_NAME=defaultopt
+  ATDM_CONFIG_BUILD_NAME=default-somethingopt
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
 
-  ATDM_CONFIG_BUILD_NAME=defaultrelease
+  ATDM_CONFIG_BUILD_NAME=default-releases
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
 
-  ATDM_CONFIG_BUILD_NAME=defaultoptend
+  ATDM_CONFIG_BUILD_NAME=default-optend
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
 
-  ATDM_CONFIG_BUILD_NAME=defaultreleaseend
+  ATDM_CONFIG_BUILD_NAME=default-yesrelease
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_BUILD_TYPE} DEBUG
 
@@ -244,6 +252,12 @@ testNodeType() {
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_OPENMP} ON
 
   ATDM_CONFIG_BUILD_NAME=default-openmpi-AFTER
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_NODE_TYPE} SERIAL
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_CUDA} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_OPENMP} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-openmpi-4.0.2-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_NODE_TYPE} SERIAL
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_CUDA} OFF
