@@ -219,9 +219,9 @@ elif atdm_match_buildname_keyword complex; then
 fi
 
 # Set 'static' or 'shared'
-if [[ $ATDM_CONFIG_BUILD_NAME == *"shared"* ]]; then
+if atdm_match_buildname_keyword shared; then
   export ATDM_CONFIG_SHARED_LIBS=ON
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"static"* ]]; then
+elif atdm_match_buildname_keyword static; then
   export ATDM_CONFIG_SHARED_LIBS=OFF
 fi
 
