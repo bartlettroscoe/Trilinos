@@ -439,6 +439,24 @@ testSharedLibs() {
 
 }
 
+
+testPrimaryTested() {
+
+  ATDM_CONFIG_BUILD_NAME=default
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-pt
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} ON
+
+  ATDM_CONFIG_BUILD_NAME=default_pt
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} ON
+
+}
+
+
 #
 # Run the unit tests
 #
