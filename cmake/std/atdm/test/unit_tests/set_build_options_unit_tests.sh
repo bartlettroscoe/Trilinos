@@ -266,6 +266,22 @@ testNodeType() {
 }
 
 
+testFPIC() {
+
+  ATDM_CONFIG_BUILD_NAME=default
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-fpic-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} ON
+
+  ATDM_CONFIG_BUILD_NAME=default_fpic-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} ON
+
+}
+
 #
 # Run the unit tests
 #
