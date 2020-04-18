@@ -284,7 +284,6 @@ testNodeType() {
 }
 
 
-
 testRDC() {
 
   ATDM_CONFIG_BUILD_NAME=default
@@ -353,6 +352,32 @@ testFPIC() {
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} ON
 
 }
+
+
+testComplex() {
+
+  ATDM_CONFIG_BUILD_NAME=default
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-complex
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-complex-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-no-complex
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-no-complex-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} OFF
+
+}
+
 
 #
 # Run the unit tests
