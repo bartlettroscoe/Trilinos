@@ -395,6 +395,30 @@ testComplex() {
 }
 
 
+testSharedLibs() {
+
+  ATDM_CONFIG_BUILD_NAME=default
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_SHARED_LIBS} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-static
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_SHARED_LIBS} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-static-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_SHARED_LIBS} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-shared
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_SHARED_LIBS} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-shared-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_SHARED_LIBS} ON
+
+}
+
 #
 # Run the unit tests
 #
