@@ -78,7 +78,7 @@ fi
 # custom_builds.sh is supported below.  ToDo: Add support for customizing
 # other things as needed.
 
-# Set the compiler
+# Set ATDM_CONFIG_COMPILER
 if [[ "${ATDM_CONFIG_COMPILER}" != "DEFAULT" ]] ; then
   # Custom compile already set
   export ATDM_CONFIG_CUSTOM_COMPILER_SET=1
@@ -147,7 +147,7 @@ fi
 # have the compiler keywords embedded in them.  For example we need to match
 # 'cuda-10.0-gnu-7.4.0' before we match 'gnu-7.4.0'.
 
-# Set KOKKOS_ARCH
+# Set ATDM_CONFIG_KOKKOS_ARCH
 export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
 . ${ATDM_UTILS_SCRIPT_DIR}/kokkos_arch_array.sh
 for kokkos_arch in ${kokkos_arch_array[@]} ; do
@@ -162,9 +162,7 @@ if   [[ $ATDM_CONFIG_KOKKOS_ARCH == "DEFAULT" ]] \
   echo "No KOKKOS_ARCH specified so using system default"
 fi
 
-# Set the optimization level
-# Defaults to debug
-export ATDM_CONFIG_BUILD_TYPE=DEBUG
+# Set ATDM_CONFIG_BUILD_TYPE
 if atdm_match_any_keyword "$ATDM_CONFIG_BUILD_NAME" \
     release-debug release_debug opt-dbg opt_dbg \
   ; then
@@ -179,7 +177,7 @@ elif atdm_match_any_keyword "$ATDM_CONFIG_BUILD_NAME" \
   export ATDM_CONFIG_BUILD_TYPE=DEBUG
 fi
 
-# Set the node types default to serial
+# Set the node type vars
 export ATDM_CONFIG_NODE_TYPE=SERIAL
 if [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
   export ATDM_CONFIG_USE_CUDA=ON
