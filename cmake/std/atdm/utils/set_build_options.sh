@@ -178,13 +178,13 @@ elif atdm_match_any_keyword "$ATDM_CONFIG_BUILD_NAME" \
 fi
 
 # Set the node type vars
-export ATDM_CONFIG_NODE_TYPE=SERIAL
-if [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
+if   atdm_match_keyword "$ATDM_CONFIG_BUILD_NAME" cuda; then
   export ATDM_CONFIG_USE_CUDA=ON
   export ATDM_CONFIG_NODE_TYPE=CUDA
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"serial"* ]]; then
-  export ATDM_CONFIG_NODE_TYPE=SERIAL
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"pthread"* ]]; then
+elif atdm_match_keyword "$ATDM_CONFIG_BUILD_NAME" openmp; then
+  export ATDM_CONFIG_USE_OPENMP=ON
+  export ATDM_CONFIG_NODE_TYPE=OPENMP
+elif atdm_match_keyword "$ATDM_CONFIG_BUILD_NAME" pthread; then
   echo
   echo "***"
   echo "*** ERROR: The Kokkos Pthreads backend is no longer supported (see TRIL-272)!"
@@ -192,15 +192,9 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"pthread"* ]]; then
   echo "***"
   echo
   return
-elif [[ $ATDM_CONFIG_BUILD_NAME == *"openmp"* ]]; then
-  export ATDM_CONFIG_USE_OPENMP=ON
-  export ATDM_CONFIG_NODE_TYPE=OPENMP
+elif atdm_match_keyword "$ATDM_CONFIG_BUILD_NAME" serial; then
+  export ATDM_CONFIG_NODE_TYPE=SERIAL
 fi
-# NOTE: Above we move 'openmp' last to avoid clashing with 'openmpi' in the
-# build name!  So as long as the build name explicitly contains 'serial' or
-# 'cuda' or 'pthread', then that will be selected for the Kokkos backend.
-# Otherwise, if one fo these are not selected and 'openmpi' is present in the
-# build name, then the default Kokkos backend will become 'openmp'!
 
 # Use CUDA RDC or not
 export ATDM_CONFIG_CUDA_RDC=OFF
