@@ -12,7 +12,12 @@ set(BUILD_STATS_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}")
 #
 function(generate_build_stats_wrappers)
 
-  set_default_and_from_env(${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS_DEFAULT OFF)
+  if (NOT "$ENV{${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS_DEFAULT}" STREQUAL "")
+    set(${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS_DEFAULT
+      "$ENV{${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS_DEFAULT}")
+  else()
+    set(${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS_DEFAULT OFF)
+  endif()
   advanced_set(${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS
     ${${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS_DEFAULT} CACHE BOOL
     "If set to 'ON', then compiler wrappers will be created and used to gather build stats."
