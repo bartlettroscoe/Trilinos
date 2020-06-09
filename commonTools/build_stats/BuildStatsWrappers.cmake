@@ -11,13 +11,16 @@ function(generate_build_stats_wrappers)
     )
 
   if (${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS)
+
     generate_build_stats_wrapper_for_lang(C)
     generate_build_stats_wrapper_for_lang(CXX)
     if (${PROJECT_NAME}_ENABLE_Fortran)
       generate_build_stats_wrapper_for_lang(Fortran)
     endif()
+
     configure_file("${BUILD_STATS_SRC_DIR}/gather_build_stats.sh"
       "${${PROJECT_NAME}_BINARY_DIR}/gather_build_stats.sh" COPYONLY)
+
   endif()
 
 endfunction()
