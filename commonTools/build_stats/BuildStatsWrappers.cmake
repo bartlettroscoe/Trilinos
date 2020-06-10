@@ -12,18 +12,18 @@ set(BUILD_STATS_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}")
 #
 function(generate_build_stats_wrappers)
 
-  if (NOT "$ENV{${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS_DEFAULT}" STREQUAL "")
-    set(${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS_DEFAULT
-      "$ENV{${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS_DEFAULT}")
+  if (NOT "$ENV{${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS_DEFAULT}" STREQUAL "")
+    set(${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS_DEFAULT
+      "$ENV{${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS_DEFAULT}")
   else()
-    set(${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS_DEFAULT OFF)
+    set(${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS_DEFAULT OFF)
   endif()
-  advanced_set(${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS
-    ${${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS_DEFAULT} CACHE BOOL
+  advanced_set(${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS
+    ${${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS_DEFAULT} CACHE BOOL
     "If set to 'ON', then compiler wrappers will be created and used to gather build stats."
     )
 
-  if (${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS)
+  if (${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS)
 
     generate_build_stats_wrapper_for_lang(C)
     generate_build_stats_wrapper_for_lang(CXX)
@@ -75,7 +75,7 @@ endfunction()
 #
 function(install_build_stats_scripts)
 
-  if (${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS)
+  if (${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS)
 
     set(gather_build_status "${${PROJECT_NAME}_BINARY_DIR}/gather_build_stats.sh")
     install(PROGRAMS "${gather_build_status}" 

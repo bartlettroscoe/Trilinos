@@ -108,13 +108,28 @@ ENDIF()
 
 # Enable Build Status package and enable reporting tests?
 
+set(bulidStats "${${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS}")
 if (
-    (${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS) AND
+    bulidStats
+    AND
     ("${${PROJECT_NAME}_ENABLE_TrilinosBuildStats}" STREQUAL "")
     )
-  message("--" "Setting ${PROJECT_NAME}_ENABLE_TrilinosBuildStats=ON"
+  message("-- " "Setting ${PROJECT_NAME}_ENABLE_TrilinosBuildStats=ON"
     " by default because"
-    " ${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS=${${PROJECT_NAME}_USE_BUILD_PERF_WRAPPERS}"
+    " ${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS=${bulidStats}"
     )
   set(${PROJECT_NAME}_ENABLE_TrilinosBuildStats ON)
+elseif(NOT bulidStats)
+  message("-- " "Force setting ${PROJECT_NAME}_ENABLE_TrilinosBuildStats=OFF"
+    " by default because"
+    " ${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS=${bulidStats}"
+    )
+  set(${PROJECT_NAME}_ENABLE_TrilinosBuildStats OFF CACHE BOOL
+    "Forced OFF due to ${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS=${bulidStats}"
+    FORCE )
+  set(${PROJECT_NAME}_ENABLE_TrilinosBuildStats OFF)
 endif()
+# NOTE: Above, if run in reduced package dependency processing mode only, then
+# ${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS may be undefined and therefore
+# ${${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS} may have an empty value.  In
+# that case
