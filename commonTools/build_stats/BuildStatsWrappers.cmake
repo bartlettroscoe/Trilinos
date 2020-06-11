@@ -103,3 +103,25 @@ function(install_build_stats_wrapper_for_lang  lang)
 endfunction()
 
 
+# Create custom 'gather-build-stats' target that will run last
+#
+# NOTE: This function must be called at the very end of all of the build
+# targets that get created for a project!
+#
+function(add_target_gather_build_stats)
+
+  if (${PROJECT_NAME}_ENABLE_BUILD_STATS)
+
+    set(buildStatsCsvFile "${${PROJECT_NAME}_BINARY_DIR}/build_stats.csv")
+
+    add_custom_command(
+      OUTPUT "${buildStatsCsvFile}"
+      COMMAND "${${PROJECT_NAME}_BINARY_DIR}/gather_build_stats.sh"
+      WORKING_DIRECTORY "${${PROJECT_NAME}_BINARY_DIR}" )
+
+    add_custom_target(gather-build-stats
+      DEPENDS "${buildStatsCsvFile}")
+
+  endif()
+
+endfunction()

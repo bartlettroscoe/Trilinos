@@ -1,5 +1,12 @@
 tribits_package(TrilinosBuildStats)
 
+add_target_gather_build_stats()
+# NOTE: We define this build target here after all of the other packages are
+# done getting defined so that it will have a dependency on all defined
+# library and executable targets but before the end of the tribits_project()
+# command so that the TriBITS Ninja Makefile generator will pick this up in
+# the documentation!
+
 tribits_add_advanced_test( Results
   EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_BUILD_STATS
   OVERALL_WORKING_DIRECTORY TEST_NAME
