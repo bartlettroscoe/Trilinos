@@ -1,6 +1,7 @@
 tribits_package(TrilinosBuildStats)
 
 tribits_add_advanced_test( Results
+  EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_BUILD_STATS
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
   TEST_0 CMND "${${PROJECT_NAME}_BINARY_DIR}/gather_build_stats.sh"

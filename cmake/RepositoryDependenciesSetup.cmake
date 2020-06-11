@@ -105,10 +105,9 @@ IF(KDD_INT_LONG OR KDD_INT_LONG_LONG OR KDD_INT_UNSIGNED)
    ENDIF()
 ENDIF()
 
+# Enable Build Status package and enable reporting the reporting test
 
-# Enable Build Status package and enable reporting tests?
-
-set(bulidStats "${${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS}")
+set(bulidStats "${${PROJECT_NAME}_ENABLE_BUILD_STATS}")
 if (
     bulidStats
     AND
@@ -116,20 +115,7 @@ if (
     )
   message("-- " "Setting ${PROJECT_NAME}_ENABLE_TrilinosBuildStats=ON"
     " by default because"
-    " ${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS=${bulidStats}"
+    " ${PROJECT_NAME}_ENABLE_BUILD_STATS=${bulidStats}"
     )
   set(${PROJECT_NAME}_ENABLE_TrilinosBuildStats ON)
-elseif(NOT bulidStats)
-  message("-- " "Force setting ${PROJECT_NAME}_ENABLE_TrilinosBuildStats=OFF"
-    " by default because"
-    " ${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS=${bulidStats}"
-    )
-  set(${PROJECT_NAME}_ENABLE_TrilinosBuildStats OFF CACHE BOOL
-    "Forced OFF due to ${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS=${bulidStats}"
-    FORCE )
-  set(${PROJECT_NAME}_ENABLE_TrilinosBuildStats OFF)
 endif()
-# NOTE: Above, if run in reduced package dependency processing mode only, then
-# ${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS may be undefined and therefore
-# ${${PROJECT_NAME}_USE_BUILD_STATS_WRAPPERS} may have an empty value.  In
-# that case
