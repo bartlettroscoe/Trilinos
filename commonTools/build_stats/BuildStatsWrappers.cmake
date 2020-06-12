@@ -12,19 +12,27 @@ set(BUILD_STATS_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}")
 #
 function(generate_build_stats_wrappers)
 
-  if (NOT "$ENV{${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT}" STREQUAL "")
+  # Set default for cache var ${PROJECT_NAME}_ENABLE_BUILD_STATS
+  if (NOT "$ENV{${PROJECT_NAME}_ENABLE_BUILD_STATS}" STREQUAL "")
+    # Use the default set in the env (overrides any local default set)
     set(${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT
-      "$ENV{${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT}")
+      "$ENV{${PROJECT_NAME}_ENABLE_BUILD_STATS}")
+  elseif(NOT "${${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT}" STREQUAL "")
+    # ${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT was already set, so use it as
+    # the default.
   else()
+    # No default was set, so make it OFF by default
     set(${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT OFF)
   endif()
+
+  # Set cache var ${PROJECT_NAME}_ENABLE_BUILD_STATS
   advanced_set(${PROJECT_NAME}_ENABLE_BUILD_STATS
     ${${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT} CACHE BOOL
     "If set to 'ON', then compiler wrappers will be created and used to gather build stats."
     )
 
+  # Generate the build-stats compiler wrappers
   if (${PROJECT_NAME}_ENABLE_BUILD_STATS)
-
     generate_build_stats_wrapper_for_lang(C)
     generate_build_stats_wrapper_for_lang(CXX)
     if (${PROJECT_NAME}_ENABLE_Fortran)
@@ -34,7 +42,6 @@ function(generate_build_stats_wrappers)
     set(gather_build_status "${${PROJECT_NAME}_BINARY_DIR}/gather_build_stats.sh")
     configure_file("${BUILD_STATS_SRC_DIR}/gather_build_stats.sh"
       "${gather_build_status}" COPYONLY)
-
   endif()
 
 endfunction()
