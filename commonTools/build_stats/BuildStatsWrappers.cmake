@@ -122,28 +122,27 @@ function(add_target_gather_build_stats)
     add_custom_target(gather-build-stats ALL
       DEPENDS "${buildStatsCsvFile}")
 
-    get_all_targets_including_in_subdirs("${${PROJECT_NAME}_SOURCE_DIR}"
-      projectTargetsList)
+    get_all_build_targets_including_in_subdirs("${${PROJECT_NAME}_SOURCE_DIR}"
+      projectBuildTargetsList)
 
-    print_var(projectTargetsList)
-
-    add_dependencies(gather-build-stats ${projectTargetsList})
+    add_dependencies(gather-build-stats ${projectBuildTargetsList})
 
   endif()
 
 endfunction()
 
 
-# Get a list all of the lib and exec targets in a subdir on below.
+# Get a list all of the lib and exec build targets starting in a a subdir and
+# in below subdirs.
 #
-function(get_all_targets_including_in_subdirs srcdir  targetsListVarOut)
+function(get_all_build_targets_including_in_subdirs srcdir  targetsListVarOut)
 
   set(targetsList "")
 
   # Recurse into subdirectories.
   get_property(dirs DIRECTORY ${srcdir} PROPERTY SUBDIRECTORIES)
   foreach(d IN LISTS dirs)
-    get_all_targets_including_in_subdirs(${d} targetsSubdirList)
+    get_all_build_targets_including_in_subdirs(${d} targetsSubdirList)
     list(APPEND targetsList ${targetsSubdirList})
   endforeach()
 
