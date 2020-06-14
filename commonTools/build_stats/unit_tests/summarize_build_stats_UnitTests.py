@@ -49,6 +49,10 @@ from CDashQueryAnalyzeReport import *
 
 g_testBaseDir = getScriptBaseDir()
 
+sys.path = [g_testBaseDir+"/.."] + sys.path
+from summarize_build_stats import *
+
+
 g_pp = pprint.PrettyPrinter(indent=2)
 
 
@@ -60,9 +64,12 @@ g_pp = pprint.PrettyPrinter(indent=2)
 
 class test_readCsvFileIntoDictOfLists(unittest.TestCase):
 
-  def test_empty(self):
-    self.assertEqual(True, False)
-
+  def test_build_stats_big_little(self):
+    buildStatsDOL = readCsvFileIntoDictOfLists(
+      g_testBaseDir+"/build_stats.big.small.csv",
+      ['max_resident_size_Kb', 'elapsed_real_time_sec', 'FileName', 'FileSize'] )
+    self.assertEqual(len(buildStatsDOL.keys()), 4)
+    self.assertEqual(len(buildStatsDOL['max_resident_size_Kb']), -1)
 
 
 #
