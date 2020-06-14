@@ -13,6 +13,24 @@ import CDashQueryAnalyzeReport as CDQAR
 #
 
 
+# Read a CSV file of build stats into a dict of lists
+#
+def readBuildStatsCsvFileIntoDictOfLists(buildStatusCsvFileName):
+  return readCsvFileIntoDictOfLists(buildStatusCsvFileName,
+    getStandardBuildStatsColsAndTypesList() )
+
+
+# Standard ste of build stats fields we want to read in
+#
+def getStandardBuildStatsColsAndTypesList():
+  return [
+    ColNameAndType('max_resident_size_Kb', 'float'),
+    ColNameAndType('elapsed_real_time_sec', 'float'),
+    ColNameAndType('FileName', 'string'),
+    ColNameAndType('FileSize', 'float'),
+    ]
+
+
 # Read in a CSV file as a dict of lists.
 #
 def readCsvFileIntoDictOfLists(csvFileName,
