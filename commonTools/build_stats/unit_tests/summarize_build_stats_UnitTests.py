@@ -88,6 +88,8 @@ class test_readBuildStatsCsvFileIntoDictOfLists(unittest.TestCase):
     self.assertEqual(buildStatsDOL['FileSize'][11], 17000000)
     self.assertEqual(buildStatsDOL['FileSize'][20], 5200000)
 
+# NOTE: Above tests also indireclty tests
+# summarize_build_stats.readCsvFileIntoDictOfLists()!
 
 
 #############################################################################
@@ -102,40 +104,6 @@ def cnat(colName, colType="string"):
 
 
 class test_readCsvFileIntoDictOfLists(unittest.TestCase):
-
-  def test_build_stats_big_little(self):
-    buildStatsDOL = SBS.readCsvFileIntoDictOfLists(
-      g_testBaseDir+"/build_stats.big.small.csv",
-      [
-        cnat('max_resident_size_Kb', 'float'),
-        cnat('elapsed_real_time_sec', 'float'),
-        cnat('FileName', 'string'),
-        cnat('FileSize', 'float'),
-        ]
-      )
-    numCols_expected = 4
-    numRows_expected = 21
-    self.assertEqual(len(buildStatsDOL.keys()), numCols_expected)
-    self.assertEqual(len(buildStatsDOL['max_resident_size_Kb']),numRows_expected)
-    self.assertEqual(len(buildStatsDOL['elapsed_real_time_sec']), numRows_expected)
-    self.assertEqual(len(buildStatsDOL['FileName']), numRows_expected)
-    self.assertEqual(len(buildStatsDOL['FileSize']), numRows_expected)
-    self.assertEqual(buildStatsDOL['max_resident_size_Kb'][0], 240000)
-    self.assertEqual(buildStatsDOL['max_resident_size_Kb'][11], 730000)
-    self.assertEqual(buildStatsDOL['max_resident_size_Kb'][20], 77000)
-    self.assertEqual(buildStatsDOL['elapsed_real_time_sec'][0], 3.5)
-    self.assertEqual(buildStatsDOL['elapsed_real_time_sec'][11], 48.2)
-    self.assertEqual(buildStatsDOL['elapsed_real_time_sec'][20], 0.4)
-    self.assertEqual(buildStatsDOL['FileName'][0],
-      "commonTools/gtest/CMakeFiles/gtest.dir/gtest/gtest-all.cc.o")
-    self.assertEqual(buildStatsDOL['FileName'][11],
-      "packages/rol/adapters/epetra/test/sol/CMakeFiles/ROL_adapters_epetra_test_sol_EpetraSROMSampleGenerator.dir/test_02.cpp.o")
-    self.assertEqual(buildStatsDOL['FileName'][20],
-      "packages/adelus/test/vector_random/Adelus_vector_random.exe")
-    self.assertEqual(buildStatsDOL['FileSize'][0], 3300000)
-    self.assertEqual(buildStatsDOL['FileSize'][11], 17000000)
-    self.assertEqual(buildStatsDOL['FileSize'][20], 5200000)
-
 
   def test_invalid_col_header(self):
     threwExcept = True
