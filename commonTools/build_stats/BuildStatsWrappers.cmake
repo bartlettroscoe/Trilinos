@@ -132,7 +132,9 @@ function(add_target_gather_build_stats)
     get_all_build_targets_including_in_subdirs("${${PROJECT_NAME}_SOURCE_DIR}"
       projectBuildTargetsList)
 
-    add_dependencies(gather-build-stats ${projectBuildTargetsList})
+    if (projectBuildTargetsList)
+      add_dependencies(gather-build-stats ${projectBuildTargetsList})
+    endif()
 
   endif()
 
