@@ -46,7 +46,7 @@ if trilinosTriBITSDirEnv:
   tribitsDir = trilinosTriBITSDirEnv
 else:
   tribitsDir = os.path.abspath(
-    os.path.join(thisScriptsDir, "../../../cmake/tribits") )
+    os.path.join(thisScriptsDir, "../../cmake/tribits") )
 ciSupportDir = os.path.join(tribitsDir, "ci_support")
 pythonUtilsDir = os.path.join(tribitsDir, "python_utils")
 #print "ciSupportDir =", ciSupportDir
