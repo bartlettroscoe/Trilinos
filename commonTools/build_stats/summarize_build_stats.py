@@ -29,7 +29,7 @@ def readCsvFileIntoDictOfLists(csvFileName,
         colNameAndTypeList)
     # Initial empty lists for each column to hold the data
     for colNameTypeIdx in colNameTypeIdxList:
-      dictOfLists.update( { colNameTypeIdx.getColName() : [] } )
+      dictOfLists.update( { colNameTypeIdx.colName() : [] } )
     # Fill the columns of data
     dataRow = 0
     for lineList in csvReader:
@@ -39,8 +39,8 @@ def readCsvFileIntoDictOfLists(csvFileName,
       #  columnHeadersList)
       # Read the row entries
       for colNameTypeIdx in colNameTypeIdxList:
-        dictOfLists[colNameTypeIdx.getColName()].append(
-          colNameTypeIdx.convertFromStr(lineList[colNameTypeIdx.getColIdx()]) )
+        dictOfLists[colNameTypeIdx.colName()].append(
+          colNameTypeIdx.convertFromStr(lineList[colNameTypeIdx.getIdx()]) )
       # Update for next row
       dataRow += 1
   # Return completed dict of lists
@@ -52,12 +52,12 @@ def getColNameTypeIdxListGivenColNameAndTypeList(csvFileName, columnHeadersList,
   ):
   colNameTypeIdxList = []
   for colNameAndTypeToGet in colNameAndTypesToGetList:
-    colIdx = GSS.findInSequence(columnHeadersList, colNameAndTypeToGet.getColName())
+    colIdx = GSS.findInSequence(columnHeadersList, colNameAndTypeToGet.colName())
     if colIdx != -1:
       colNameTypeIdxList.append(ColNameTypeIdx(colNameAndTypeToGet, colIdx))
     else:
       raise Exception(
-        "Error, the CSV file column header '"+colNameAndTypeToGet.getColName()+"'"+\
+        "Error, the CSV file column header '"+colNameAndTypeToGet.colName()+"'"+\
         " does not exist in the list of column headers "+str(columnHeadersList)+\
         " from the CSV file '"+csvFileName+"'!")
   return colNameTypeIdxList
@@ -68,9 +68,9 @@ class ColNameAndType(object):
     self.__colName = colName
     self.__colType = colType
     self.assertType()
-  def getColName(self):
+  def colName(self):
     return self.__colName
-  def getColType(self):
+  def colType(self):
     return self.__colType
   def __repr__(self):
     myStr = "ColNameAndType{"+self.__colName+","+str(self.__colType)+"}"
@@ -98,9 +98,9 @@ class ColNameTypeIdx(object):
   def __init__(self, colNameAndType, colIdx):
     self.__colNameAndType = colNameAndType
     self.__colIdx = colIdx
-  def getColName(self):
-    return self.__colNameAndType.getColName()
-  def getColIdx(self):
+  def colName(self):
+    return self.__colNameAndType.colName()
+  def getIdx(self):
     return self.__colIdx
   def convertFromStr(self, strIn):
     return self.__colNameAndType.convertFromStr(strIn)

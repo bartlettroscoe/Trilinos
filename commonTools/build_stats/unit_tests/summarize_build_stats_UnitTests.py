@@ -173,24 +173,24 @@ class test_ColNameTypeIdx(unittest.TestCase):
     colNameTypeIdx = SBS.ColNameTypeIdx(SBS.ColNameAndType("name", "float"), 5)
     asStr = str(colNameTypeIdx)
     self.assertEqual(asStr, "ColNameTypeIdx{ColNameAndType{name,float},5}")
-    self.assertEqual(colNameTypeIdx.getColName(), "name")
-    self.assertEqual(colNameTypeIdx.getColIdx(), 5)
+    self.assertEqual(colNameTypeIdx.colName(), "name")
+    self.assertEqual(colNameTypeIdx.getIdx(), 5)
     self.assertEqual(colNameTypeIdx.convertFromStr("10.5"), 10.5)
 
   def test_int(self):
     colNameTypeIdx = SBS.ColNameTypeIdx(SBS.ColNameAndType("name", "int"), 4)
     asStr = str(colNameTypeIdx)
     self.assertEqual(asStr, "ColNameTypeIdx{ColNameAndType{name,int},4}")
-    self.assertEqual(colNameTypeIdx.getColName(), "name")
-    self.assertEqual(colNameTypeIdx.getColIdx(), 4)
+    self.assertEqual(colNameTypeIdx.colName(), "name")
+    self.assertEqual(colNameTypeIdx.getIdx(), 4)
     self.assertEqual(colNameTypeIdx.convertFromStr("12"), 12)
 
   def test_string(self):
     colNameTypeIdx = SBS.ColNameTypeIdx(SBS.ColNameAndType("name", "string"), 3)
     asStr = str(colNameTypeIdx)
     self.assertEqual(asStr, "ColNameTypeIdx{ColNameAndType{name,string},3}")
-    self.assertEqual(colNameTypeIdx.getColName(), "name")
-    self.assertEqual(colNameTypeIdx.getColIdx(), 3)
+    self.assertEqual(colNameTypeIdx.colName(), "name")
+    self.assertEqual(colNameTypeIdx.getIdx(), 3)
     self.assertEqual(colNameTypeIdx.convertFromStr("some str"), "some str")
 
   def test_invalid_type(self):
