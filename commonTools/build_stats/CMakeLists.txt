@@ -7,6 +7,10 @@ add_target_gather_build_stats()
 # command so that the TriBITS Ninja Makefile generator will pick this up in
 # the documentation!
 
+#
+# Create summary report of build stats if build stats are enabled
+#
+
 tribits_add_advanced_test( Results
   EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_BUILD_STATS
   OVERALL_WORKING_DIRECTORY TEST_NAME
@@ -25,5 +29,14 @@ if (Results_TEST_NAME)
   set_tests_properties( ${Results_TEST_NAME} PROPERTIES
     ATTACHED_FILES "${${PROJECT_NAME}_BINARY_DIR}/build_stats.csv")
 endif()
+
+
+#
+# Add unit tests for build_stats related support code (even if build stats is
+# not enabled for this build).
+#
+
+tribits_add_test_directories(unit_tests)
+
 
 tribits_package_postprocess()
