@@ -208,6 +208,84 @@ def computeStdBuildStatsSummaries(buildStatsDOL):
   return buildStatsSummariesList
 
 
+# Create an ASCII text report block for a list of build stats summaries
+#
+def createAsciiReportOfBuildStatsSummaries(buildStatsSummariesList,
+    buildStatsSetName,
+  ):
+  asciiReportStr = ""
+  for buildStatsSummary in buildStatsSummariesList:
+    asciiReportStr += createAsciiReportOfOneBuildStatsSummary(buildStatsSummary,
+      buildStatsSetName)
+  return asciiReportStr
+
+
+def createAsciiReportOfOneBuildStatsSummary(buildStatsSummary, buildStatsSetName):
+  # Shorter names for below
+  bss = buildStatsSummary
+  bssn = buildStatsSetName
+  # Create and return the report str
+  asciiReportStr = \
+    bssn+": sum("+bss.fieldName+") = "+str(bss.sumValue)+\
+      " ("+str(bss.numValues)+" entries)\n"+\
+    bssn+": max("+bss.fieldName+") = "+str(bss.maxValue)+" ("+bss.maxFileName+")\n"
+  return asciiReportStr
+
+#
+# Help message
+#
+
+usageHelp = r"""summarize_build_stats.py --build-stats-csv-file=<csv-file>
+
+Summarize gathered build stats from the the build stats CSV file and print the
+report as ASCII text to STDOUT.  This prints a report like:
+
+Full Project: sum(max_resident_size_size_mb) = ??? (??? entries)
+Full Project: max(max_resident_size_size_mb) = ??? (<file-name>)
+Full Project: max(elapsed_real_time_sec) = ??? (<file-name>)
+Full Project: sum(elapsed_real_time_sec) = ??? (??? entries)
+Full Project: sum(file_size_mb) = ??? (??? entries)
+Full Project: max(file_size_mb) = ??? (<file-name>)
+"""
+
+#
+# Helper functions
+#
+
+
+def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
+  
+  clp.add_option(
+    "--build-stats-csv-file", dest="buildStatsCsvFile", type="string", default="",
+    help="The build status CSV file created by build wappers and gathered up." )
+
+
+def getCmndLineOptions():
+  from optparse import OptionParser
+  clp = OptionParser(usage=usageHelp)
+  injectCmndLineOptionsInParser(clp)
+  (options, args) = clp.parse_args()
+  if options.buildStatsCsvFile == "":
+    raise Exception(
+      "Error, input argument --build-stats-csv-file must be set!")
+  if not os.path.exists(options.buildStatsCsvFile):
+    raise Exception(
+      "Error, file '"+options.buildStatsCsvFile+"' does not exist!")
+  return options
+
+
 #
 #  Main()
 # 
+
+if __name__ == '__main__':
+
+  inOptions = getCmndLineOptions()
+
+  buildStatsDOL = readBuildStatsCsvFileIntoDictOfLists(inOptions.buildStatsCsvFile)
+  addStdScaledBuildStatsFields(buildStatsDOL)
+  buildStatsSummariesList = computeStdBuildStatsSummaries(buildStatsDOL)
+  buildStatsAsciiReport = createAsciiReportOfBuildStatsSummaries(
+    buildStatsSummariesList, "Full Project")
+
+  print(buildStatsAsciiReport)

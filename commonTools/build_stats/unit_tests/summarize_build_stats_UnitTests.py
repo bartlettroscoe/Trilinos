@@ -49,6 +49,8 @@ thisScriptsDir = os.path.dirname(os.path.abspath(__file__))
 g_testBaseDir = thisScriptsDir
 sys.path = [thisScriptsDir+"/.."] + sys.path
 import summarize_build_stats as SBS
+import FindTribitsCiSupportDir
+import GeneralScriptSupport as GSS
 
 g_pp = pprint.PrettyPrinter(indent=2)
 
@@ -301,8 +303,7 @@ class test_computeStdBuildStatsSummaries(unittest.TestCase):
 
   def test_big_small(self):
     buildStatsDOL = getBuildStatusWithComputedForTests()
-    bssl = \
-      SBS.computeStdBuildStatsSummaries(buildStatsDOL)
+    bssl = SBS.computeStdBuildStatsSummaries(buildStatsDOL)
     self.assertEqual(len(bssl), 3)
     self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
     self.assertEqual(bssl[0].numValues, 21)
@@ -325,6 +326,50 @@ class test_computeStdBuildStatsSummaries(unittest.TestCase):
       'packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o' )
   # NOTE: Above is a white-box test and we want to validate the order as that
   # is also the order these stats will be displayed.
+
+
+#############################################################################
+#
+# Test summarize_build_stats.createAsciiReportOfBuildStatsSummaries()
+#
+#############################################################################
+
+
+class test_createAsciiReportOfBuildStatsSummaries(unittest.TestCase):
+
+  def test_big_small(self):
+    buildStatsDOL = getBuildStatusWithComputedForTests()
+    buildStatsSummariesList = SBS.computeStdBuildStatsSummaries(buildStatsDOL)
+    buildStatsAsciiReport = SBS.createAsciiReportOfBuildStatsSummaries(
+      buildStatsSummariesList, "Full Project")
+    self.assertEqual(buildStatsAsciiReport,
+      "Full Project: sum(max_resident_size_mb) = 10023.45 (21 entries)\n"+\
+      "Full Project: max(max_resident_size_mb) = 2343.75 (packages/tpetra/classic/NodeAPI/CMakeFiles/tpetraclassicnodeapi.dir/Kokkos_DefaultNode.cpp.o)\n"+\
+      "Full Project: sum(elapsed_real_time_sec) = 157.9 (21 entries)\n"+\
+      "Full Project: max(elapsed_real_time_sec) = 48.2 (packages/rol/adapters/epetra/test/sol/CMakeFiles/ROL_adapters_epetra_test_sol_EpetraSROMSampleGenerator.dir/test_02.cpp.o)\n"+\
+      "Full Project: sum(file_size_mb) = 157.19 (21 entries)\n"+\
+      "Full Project: max(file_size_mb) = 42.92 (packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o)\n" )
+
+#############################################################################
+#
+# Test summarize_build_stats.py
+#
+#############################################################################
+
+class test_summarize_build_stats_py(unittest.TestCase):
+
+  def test_big_small(self):
+    cmnd = thisScriptsDir+"/../summarize_build_stats.py"+\
+      " --build-stats-csv-file="+g_testBaseDir+"/build_stats.big.small.csv"
+    output = GSS.getCmndOutput(cmnd)
+    self.assertEqual(output,
+      "Full Project: sum(max_resident_size_mb) = 10023.45 (21 entries)\n"+\
+      "Full Project: max(max_resident_size_mb) = 2343.75 (packages/tpetra/classic/NodeAPI/CMakeFiles/tpetraclassicnodeapi.dir/Kokkos_DefaultNode.cpp.o)\n"+\
+      "Full Project: sum(elapsed_real_time_sec) = 157.9 (21 entries)\n"+\
+      "Full Project: max(elapsed_real_time_sec) = 48.2 (packages/rol/adapters/epetra/test/sol/CMakeFiles/ROL_adapters_epetra_test_sol_EpetraSROMSampleGenerator.dir/test_02.cpp.o)\n"+\
+      "Full Project: sum(file_size_mb) = 157.19 (21 entries)\n"+\
+      "Full Project: max(file_size_mb) = 42.92 (packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o)\n\n" )
+
 
 #
 # Run the unit tests!
