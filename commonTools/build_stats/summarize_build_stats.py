@@ -22,12 +22,12 @@ import CDashQueryAnalyzeReport as CDQAR
 #
 def readBuildStatsCsvFileIntoDictOfLists(buildStatusCsvFileName):
   return readCsvFileIntoDictOfLists(buildStatusCsvFileName,
-    getStandardBuildStatsColsAndTypesList() )
+    getStdBuildStatsColsAndTypesList() )
 
 
 # Standard set of build stats fields we want to read in
 #
-def getStandardBuildStatsColsAndTypesList():
+def getStdBuildStatsColsAndTypesList():
   return [
     ColNameAndType('max_resident_size_Kb', 'float'),
     ColNameAndType('elapsed_real_time_sec', 'float'),
@@ -140,7 +140,7 @@ class ColNameTypeIdx(object):
 
 # Add standard scaled fields to read-in build stats dict of lists
 #
-def addStandardScaledBuildStatsFields(buildStatsDOL):
+def addStdScaledBuildStatsFields(buildStatsDOL):
   addNewFieldByScalingExistingField(buildStatsDOL, 'max_resident_size_Kb',
     1.0/1024, 2, 'max_resident_size_mb')
   addNewFieldByScalingExistingField(buildStatsDOL, 'FileSize',

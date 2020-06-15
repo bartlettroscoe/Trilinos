@@ -60,7 +60,7 @@ def getBuildStatusWithComputedForTests(computeStdScaledFields=True):
     g_buildStatsDOL = SBS.readBuildStatsCsvFileIntoDictOfLists(
       g_testBaseDir+"/build_stats.big.small.csv" )
     if computeStdScaledFields:
-      SBS.addStandardScaledBuildStatsFields(g_buildStatsDOL)
+      SBS.addStdScaledBuildStatsFields(g_buildStatsDOL)
   return copy.deepcopy(g_buildStatsDOL)
 
 g_buildStatsDOL = None
@@ -230,16 +230,16 @@ class test_ColNameTypeIdx(unittest.TestCase):
 
 #############################################################################
 #
-# Test summarize_build_stats.addStandardScaledBuildStatsFields()
+# Test summarize_build_stats.addStdScaledBuildStatsFields()
 #
 #############################################################################
 
-class test_addStandardScaledBuildStatsFields(unittest.TestCase):
+class test_addStdScaledBuildStatsFields(unittest.TestCase):
 
   def test_read_in_and_create_new_fields(self):
     buildStatsDOL = SBS.readBuildStatsCsvFileIntoDictOfLists(
       g_testBaseDir+"/build_stats.big.small.csv" )
-    SBS.addStandardScaledBuildStatsFields(buildStatsDOL)
+    SBS.addStdScaledBuildStatsFields(buildStatsDOL)
     self.assertEqual(len(buildStatsDOL), 6)
     self.assertEqual(len(buildStatsDOL['max_resident_size_mb']), 21)
     self.assertEqual(len(buildStatsDOL['file_size_mb']), 21)
