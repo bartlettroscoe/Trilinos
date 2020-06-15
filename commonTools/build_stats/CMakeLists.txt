@@ -15,12 +15,10 @@ tribits_add_advanced_test( Results
   EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_BUILD_STATS
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
-  TEST_0 CMND "${${PROJECT_NAME}_BINARY_DIR}/gather_build_stats.sh"
-    WORKING_DIRECTORY "${${PROJECT_NAME}_BINARY_DIR}"
-    SKIP_CLEAN_WORKING_DIRECTORY  # Critical or you delete the entire working dir!
-    ALWAYS_FAIL_ON_NONZERO_RETURN
-  TEST_1 CMND echo
-    ARGS "ToDo: Run some tool that will give nice summary build stats to STDOUT!"
+  TEST_0
+    MESSAGE "Sumarize the build stats from the already created build_stats.csv file"
+    CMND "${${PROJECT_NAME}_SOURCE_DIR}/commonTools/build_stats/summarize_build_stats.py"
+    ARGS --build-stats-csv-file="${${PROJECT_NAME}_BINARY_DIR}/build_stats.csv"
     ALWAYS_FAIL_ON_NONZERO_RETURN
   ADDED_TEST_NAME_OUT Results_TEST_NAME
   )
