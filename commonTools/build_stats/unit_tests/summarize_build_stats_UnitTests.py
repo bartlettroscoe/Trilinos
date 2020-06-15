@@ -212,6 +212,46 @@ class test_ColNameTypeIdx(unittest.TestCase):
       self.assertFalse("ERROR: Did not thown an excpetion")
 
 
+#############################################################################
+#
+# Test summarize_build_stats.addStandardScaledBuildStatsFields()
+#
+#############################################################################
+
+class test_addStandardScaledBuildStatsFields(unittest.TestCase):
+
+  def test_read_in_and_create_new_fields(self):
+    buildStatsDOL = SBS.readBuildStatsCsvFileIntoDictOfLists(
+      g_testBaseDir+"/build_stats.big.small.csv" )
+    SBS.addStandardScaledBuildStatsFields(buildStatsDOL)
+    self.assertEqual(len(buildStatsDOL), 6)
+    self.assertEqual(len(buildStatsDOL['max_resident_size_mb']), 21)
+    self.assertEqual(len(buildStatsDOL['file_size_mb']), 21)
+    self.assertEqual(buildStatsDOL['max_resident_size_mb'][0], 234.38)
+    self.assertEqual(buildStatsDOL['max_resident_size_mb'][11], 712.89)
+    self.assertEqual(buildStatsDOL['max_resident_size_mb'][20], 75.20)
+    self.assertEqual(buildStatsDOL['file_size_mb'][0], 3.15)
+    self.assertEqual(buildStatsDOL['file_size_mb'][11], 16.21)
+    self.assertEqual(buildStatsDOL['file_size_mb'][20], 4.96)
+
+
+#############################################################################
+#
+# Test summarize_build_stats.addNewFieldByScalingExistingField()
+#
+#############################################################################
+
+class test_addNewFieldByScalingExistingField(unittest.TestCase):
+
+  def test_add_field_1(self):
+    dictOfLists = { 'field_1' : [ 1.1, 2.2, 3.3 ] }
+    SBS.addNewFieldByScalingExistingField(dictOfLists, 'field_1', 0.1, 2,
+      'scaled_field')
+    self.assertEqual(len(dictOfLists.keys()), 2)
+    self.assertEqual(dictOfLists['field_1'], [ 1.1, 2.2, 3.3 ])
+    self.assertEqual(dictOfLists['scaled_field'], [ 0.11, 0.22, 0.33 ])
+
+
 #
 # Run the unit tests!
 #

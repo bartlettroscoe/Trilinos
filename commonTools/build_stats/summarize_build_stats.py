@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import csv
+from decimal import Decimal
 
 from FindTribitsCiSupportDir import *
 import GeneralScriptSupport as GSS
@@ -13,14 +14,18 @@ import CDashQueryAnalyzeReport as CDQAR
 #
 
 
-# Read a CSV file of build stats into a dict of lists
+# Read a CSV file of build stats into a dict of lists for just the fields we
+# want.
+#
+# Returns a dict of lists where each key is the column/field name and the
+# value is an array of data for that field.
 #
 def readBuildStatsCsvFileIntoDictOfLists(buildStatusCsvFileName):
   return readCsvFileIntoDictOfLists(buildStatusCsvFileName,
     getStandardBuildStatsColsAndTypesList() )
 
 
-# Standard ste of build stats fields we want to read in
+# Standard set of build stats fields we want to read in
 #
 def getStandardBuildStatsColsAndTypesList():
   return [
@@ -29,6 +34,8 @@ def getStandardBuildStatsColsAndTypesList():
     ColNameAndType('FileName', 'string'),
     ColNameAndType('FileSize', 'float'),
     ]
+# NOTE: Above, we use type 'float' instead of 'int' for fields that are ints
+# because we want to allow a very large size.
 
 
 # Read in a CSV file as a dict of lists.
@@ -129,6 +136,28 @@ class ColNameTypeIdx(object):
     return ((self.__colNameAndType,self.__colIdx)==(other.__colNameAndType,other.__colIdx))
   def __ne__(self, other):
     return ((self.__colNameAndType,self.__colIdx)!=(other.__colNameAndType,other.__colIdx))
+
+
+# Add standard scaled fields to read-in build stats dict of lists
+#
+def addStandardScaledBuildStatsFields(buildStatsDOL):
+  addNewFieldByScalingExistingField(buildStatsDOL, 'max_resident_size_Kb',
+    1.0/1024, 2, 'max_resident_size_mb')
+  addNewFieldByScalingExistingField(buildStatsDOL, 'FileSize',
+    1.0/(1024*1024), 2, 'file_size_mb')
+
+
+# Scale an existing field to create a new field
+#
+def addNewFieldByScalingExistingField(dictOfLists, existingFieldName,
+    scaleFactor, decimalPlaces, newFieldName,
+  ):
+  existingFieldDataList = dictOfLists[existingFieldName]
+  newFieldDataList = []
+  for entry in existingFieldDataList:
+    newEntry = round(Decimal(scaleFactor*entry), decimalPlaces) 
+    newFieldDataList.append(newEntry)
+  dictOfLists.update( {newFieldName : newFieldDataList} )
 
 
 #
