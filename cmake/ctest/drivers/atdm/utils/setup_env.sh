@@ -135,3 +135,11 @@ if [[ "${ATDM_CONFIG_MAKE_INSTALL_GROUP}" == "" ]] \
   export ATDM_CONFIG_MAKE_INSTALL_GROUP="${ATDM_CONFIG_MAKE_INSTALL_GROUP_DEFAULT}"
 fi
 echo "ATDM_CONFIG_MAKE_INSTALL_GROUP=${ATDM_CONFIG_MAKE_INSTALL_GROUP}"
+
+#
+# D) Set up for build stats by default (but allow to be disabled)
+#
+
+if [[ "${Trilinos_ENABLE_BUILD_STATS}" == "" ]] ; then
+  export Trilinos_ENABLE_BUILD_STATS=ON
+fi
