@@ -52,6 +52,22 @@ import summarize_build_stats as SBS
 g_pp = pprint.PrettyPrinter(indent=2)
 
 
+# Get a copied dict of lists of build stats read from input file
+#
+def getBuildStatusWithComputedForTests(computeStdScaledFields=True):
+  global g_buildStatsDOL
+  if not g_buildStatsDOL:
+    g_buildStatsDOL = SBS.readBuildStatsCsvFileIntoDictOfLists(
+      g_testBaseDir+"/build_stats.big.small.csv" )
+    if computeStdScaledFields:
+      SBS.addStandardScaledBuildStatsFields(g_buildStatsDOL)
+  return copy.deepcopy(g_buildStatsDOL)
+
+g_buildStatsDOL = None
+
+# Note: It is structured this way above because we don't want the unit test
+# for the function readBuildStatsCsvFileIntoDictOfLists() to be unable to run if a defect is added to it.
+
 
 #############################################################################
 #
@@ -250,6 +266,27 @@ class test_addNewFieldByScalingExistingField(unittest.TestCase):
     self.assertEqual(len(dictOfLists.keys()), 2)
     self.assertEqual(dictOfLists['field_1'], [ 1.1, 2.2, 3.3 ])
     self.assertEqual(dictOfLists['scaled_field'], [ 0.11, 0.22, 0.33 ])
+
+
+#############################################################################
+#
+# Test summarize_build_stats.computeBuildStatusSummaryForOneField()
+#
+#############################################################################
+
+
+class test_computeBuildStatusSummaryForOneField(unittest.TestCase):
+
+  def test_field_1(self):
+    buildStatsDOL = getBuildStatusWithComputedForTests()
+    buildStatSummary = \
+      SBS.computeBuildStatusSummaryForOneField(buildStatsDOL, 'max_resident_size_mb')
+    self.assertEqual(buildStatSummary.fieldName, 'max_resident_size_mb')
+    self.assertEqual(buildStatSummary.numValues, 21)
+    self.assertEqual(buildStatSummary.sumValue, 10023.45)
+    self.assertEqual(buildStatSummary.maxValue, 2400000/1024.0)
+    self.assertEqual(buildStatSummary.maxFileName,
+      'packages/tpetra/classic/NodeAPI/CMakeFiles/tpetraclassicnodeapi.dir/Kokkos_DefaultNode.cpp.o' )
 
 
 #

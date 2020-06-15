@@ -160,6 +160,40 @@ def addNewFieldByScalingExistingField(dictOfLists, existingFieldName,
   dictOfLists.update( {newFieldName : newFieldDataList} )
 
 
+# Compute summary info about a sinlgle build stat from a dict of list of build
+# stats
+#
+def computeBuildStatusSummaryForOneField(buildStatsDOL, fieldName):
+  buildStatList = buildStatsDOL[fieldName]
+  fileNameList = buildStatsDOL['FileName']
+  # Set easy fields
+  buildStatSummary = BuildStatSummary(fieldName)
+  buildStatSummary.numValues = len(buildStatList)
+  buildStatSummary.sumValue = sum(buildStatList)
+  # Compute max and the corresponding filename
+  maxValue = 0
+  maxFileName = ""
+  for i in range(buildStatSummary.numValues):
+    buildStat = buildStatList[i]
+    fileName = fileNameList[i]
+    if buildStat > maxValue:
+      maxValue = buildStat
+      maxFileName = fileName
+  buildStatSummary.maxValue = maxValue
+  buildStatSummary.maxFileName = maxFileName
+  # Return
+  return buildStatSummary
+
+
+class BuildStatSummary(object):
+  def __init__(self, fieldName):
+    self.fieldName = fieldName
+    self.numValues = None
+    self.sumValue = None
+    self.maxValue = None
+    self.maxFileName = None
+
+
 #
 #  Main()
 # 
