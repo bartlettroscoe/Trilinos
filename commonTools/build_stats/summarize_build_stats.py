@@ -163,13 +163,13 @@ def addNewFieldByScalingExistingField(dictOfLists, existingFieldName,
 # Compute summary info about a sinlgle build stat from a dict of list of build
 # stats
 #
-def computeBuildStatusSummaryForOneField(buildStatsDOL, fieldName):
+def computeBuildStatusSummaryForOneField(buildStatsDOL, fieldName, decimalPlaces):
   buildStatList = buildStatsDOL[fieldName]
   fileNameList = buildStatsDOL['FileName']
   # Set easy fields
   buildStatSummary = BuildStatSummary(fieldName)
   buildStatSummary.numValues = len(buildStatList)
-  buildStatSummary.sumValue = sum(buildStatList)
+  buildStatSummary.sumValue = round(Decimal(sum(buildStatList)), decimalPlaces)
   # Compute max and the corresponding filename
   maxValue = 0
   maxFileName = ""
@@ -192,6 +192,20 @@ class BuildStatSummary(object):
     self.sumValue = None
     self.maxValue = None
     self.maxFileName = None
+
+
+# Compute and return a list of standard build stats summaries from a dict of
+# lists of build stats.
+#
+def computeStdBuildStatsSummaries(buildStatsDOL):
+  buildStatsSummariesList = []
+  buildStatsSummariesList.append(
+    computeBuildStatusSummaryForOneField(buildStatsDOL, 'max_resident_size_mb', 2) )
+  buildStatsSummariesList.append(
+    computeBuildStatusSummaryForOneField(buildStatsDOL, 'elapsed_real_time_sec', 2) )
+  buildStatsSummariesList.append(
+    computeBuildStatusSummaryForOneField(buildStatsDOL, 'file_size_mb', 2) )
+  return buildStatsSummariesList
 
 
 #

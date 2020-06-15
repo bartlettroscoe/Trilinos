@@ -43,6 +43,7 @@ import copy
 import shutil
 import unittest
 import pprint
+from decimal import Decimal
 
 thisScriptsDir = os.path.dirname(os.path.abspath(__file__))
 g_testBaseDir = thisScriptsDir
@@ -280,7 +281,7 @@ class test_computeBuildStatusSummaryForOneField(unittest.TestCase):
   def test_field_1(self):
     buildStatsDOL = getBuildStatusWithComputedForTests()
     buildStatSummary = \
-      SBS.computeBuildStatusSummaryForOneField(buildStatsDOL, 'max_resident_size_mb')
+      SBS.computeBuildStatusSummaryForOneField(buildStatsDOL, 'max_resident_size_mb', 2)
     self.assertEqual(buildStatSummary.fieldName, 'max_resident_size_mb')
     self.assertEqual(buildStatSummary.numValues, 21)
     self.assertEqual(buildStatSummary.sumValue, 10023.45)
@@ -288,6 +289,42 @@ class test_computeBuildStatusSummaryForOneField(unittest.TestCase):
     self.assertEqual(buildStatSummary.maxFileName,
       'packages/tpetra/classic/NodeAPI/CMakeFiles/tpetraclassicnodeapi.dir/Kokkos_DefaultNode.cpp.o' )
 
+
+#############################################################################
+#
+# Test summarize_build_stats.computeStdBuildStatsSummaries()
+#
+#############################################################################
+
+
+class test_computeStdBuildStatsSummaries(unittest.TestCase):
+
+  def test_big_small(self):
+    buildStatsDOL = getBuildStatusWithComputedForTests()
+    bssl = \
+      SBS.computeStdBuildStatsSummaries(buildStatsDOL)
+    self.assertEqual(len(bssl), 3)
+    self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
+    self.assertEqual(bssl[0].numValues, 21)
+    self.assertEqual(bssl[0].sumValue, 10023.45)
+    self.assertEqual(bssl[0].maxValue, 2400000/1024.0)
+    self.assertEqual(bssl[0].maxFileName,
+      'packages/tpetra/classic/NodeAPI/CMakeFiles/tpetraclassicnodeapi.dir/Kokkos_DefaultNode.cpp.o' )
+    self.assertEqual(bssl[1].fieldName, 'elapsed_real_time_sec')
+    self.assertEqual(bssl[1].numValues, 21)
+    self.assertEqual(bssl[1].sumValue, 157.9)
+    self.assertEqual(bssl[1].maxValue, 48.2)
+    self.assertEqual(bssl[1].maxFileName,
+     'packages/rol/adapters/epetra/test/sol/CMakeFiles/ROL_adapters_epetra_test_sol_EpetraSROMSampleGenerator.dir/test_02.cpp.o' )
+    self.assertEqual(bssl[2].fieldName, 'file_size_mb')
+    self.assertEqual(bssl[2].numValues, 21)
+    self.assertEqual(bssl[2].sumValue, 157.19)
+    self.assertEqual(bssl[2].maxValue,
+      round(Decimal(45000000/(1024.0*1024.0)), 2) )
+    self.assertEqual(bssl[2].maxFileName,
+      'packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o' )
+  # NOTE: Above is a white-box test and we want to validate the order as that
+  # is also the order these stats will be displayed.
 
 #
 # Run the unit tests!
