@@ -63,10 +63,15 @@ function(generate_build_stats_wrapper_for_lang  lang)
       CACHE FILEPATH "Overwritten build stats ${lang} compiler wrapper" FORCE )
   endif()
 
-  message("-- " "Generated build stats compiler wrapper for ${lang}")
+  message("-- " "Generate build stats compiler wrapper for ${lang}")
   set(BUILD_STAT_COMPILER_WRAPPER_INNER_COMPILER "${CMAKE_${lang}_COMPILER_ORIG}")
   configure_file("${BUILD_STATS_SRC_DIR}/build_stat_lang_wrapper.sh.in"
     "${compiler_wrapper}" @ONLY)
+
+  # Use the orginal compiler for the installed <XXX>Config.cmake files
+  set(CMAKE_${lang}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR
+    "${CMAKE_${lang}_COMPILER_ORIG}" CACHE INTERNAL "")
+  print_var(CMAKE_${lang}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR)
 
 endfunction()
 
