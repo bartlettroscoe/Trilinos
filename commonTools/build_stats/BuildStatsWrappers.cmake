@@ -73,7 +73,7 @@ function(generate_build_stats_wrapper_for_lang  lang)
   # Use the orginal compiler for the installed <XXX>Config.cmake files
   set(CMAKE_${lang}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR
     "${CMAKE_${lang}_COMPILER_ORIG}" CACHE INTERNAL "")
-  print_var(CMAKE_${lang}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR)
+  #print_var(CMAKE_${lang}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR)
 
 endfunction()
 
