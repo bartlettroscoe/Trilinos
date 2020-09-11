@@ -19,9 +19,9 @@
 # Get input arguments
 atdm_custom_config_dir_arg=$1
 
-custom_system_name=$(basename ${ATDM_CUSTOM_CONFIG_DIR})
+custom_system_name=$(basename ${atdm_custom_config_dir_arg})
 
-echo "Selecting custom system configuration '${custom_system_name_arg}'"
+echo "Selecting custom system configuration '${custom_system_name}'"
 export ATDM_CONFIG_REAL_HOSTNAME=`hostname`
 export ATDM_CONFIG_CDASH_HOSTNAME=$ATDM_CONFIG_REAL_HOSTNAME
 export ATDM_CONFIG_SYSTEM_NAME=$custom_system_name
