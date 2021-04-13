@@ -105,8 +105,14 @@ def checkBuildStatsTimingDictHasError(buildStatsTimingDict):
   errMsg = ""
   for stdBuildStatColAndType in getStdBuildStatsColsAndTypesList():
     requiredFieldName = stdBuildStatColAndType.colName()
-    val = buildStatsTimingDict.get(requiredFieldName, None)
-    if val == None:
+    requiredFieldType = stdBuildStatColAndType.colType()
+    strVal = buildStatsTimingDict.get(requiredFieldName, None)
+    if strVal == None:
       errMsg = "ERROR: The required field '"+requiredFieldName+"' is missing!"
       break
+    try:
+      convertedVal = stdBuildStatColAndType.convertFromStr(strVal)
+    except Exception as exceptObj:
+      errMsg = "ERROR: For field '"+requiredFieldName+"' the string value '"+strVal+"'"+\
+        " could not be converted to the expected type '"+requiredFieldType+"'!"
   return errMsg

@@ -141,6 +141,17 @@ class test_readBuildStatsTimingFileIntoDict(unittest.TestCase):
     readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
       numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
 
+  def test_bad_type_filesize_fail(self):
+    buildStatsTimingFile = \
+      g_testBaseDir+"/bad_timing_build_stats_files/target1.timing.bad_type_filesize"
+    numKeys_expected = 0
+    buildStatsTimingDict_expected = None
+    errMsg_expected = \
+      buildStatsTimingFile+": ERROR: For field 'FileSize' the string value"+\
+       " 'bad size type' could not be converted to the expected type 'float'!"
+    readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
+      numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
+
   # ToDo: Test missing different required headers
 
   # ToDo: Test for missing data from required column
