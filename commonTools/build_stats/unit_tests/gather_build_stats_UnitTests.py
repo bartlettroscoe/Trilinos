@@ -74,7 +74,7 @@ def readBuildStatsTimingFileIntoDictTest(testObj, buildStatsTimingFile,
 
 class test_readBuildStatsTimingFileIntoDict(unittest.TestCase):
 
-  def test_target1(self):
+  def test_correct(self):
     buildStatsTimingFile = \
       g_testBaseDir+"/dummy_build_dir/some/base/dir/target1.timing"
     numKeys_expected = 6
@@ -90,12 +90,21 @@ class test_readBuildStatsTimingFileIntoDict(unittest.TestCase):
     readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
       numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
 
-  def test_target1_two_data_rows(self):
+  def test_two_data_rows_fail(self):
     buildStatsTimingFile = \
       g_testBaseDir+"/bad_timing_build_stats_files/target1.timing.two_data_rows"
     numKeys_expected = 0
     buildStatsTimingDict_expected = None
-    errMsg_expected = buildStatsTimingFile+": WARNING: Contains 2 != 1 data rows!"
+    errMsg_expected = buildStatsTimingFile+": ERROR: Contains 2 != 1 data rows!"
+    readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
+      numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
+
+  def test_missing_fail(self):
+    buildStatsTimingFile = \
+      g_testBaseDir+"/file_does_not_exist.timing"
+    numKeys_expected = 0
+    buildStatsTimingDict_expected = None
+    errMsg_expected = buildStatsTimingFile+": ERROR: File does not exist!"
     readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
       numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
 

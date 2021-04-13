@@ -28,16 +28,25 @@ import CDashQueryAnalyzeReport as CDQAR
 # case there are problems with the running of the magic_wrapper.py tool.
 #
 def readBuildStatsTimingFileIntoDict(buildStatsTimingFile):
+
+   # Output data initialization
    buildStatsTimingDict = None
    errMsg = ""
+      
+   # Read CSV file into list of dicts
+   listOfDicts = None
+   if os.path.exists(buildStatsTimingFile):
+     listOfDicts = CDQAR.readCsvFileIntoListOfDicts(buildStatsTimingFile)
 
-   listOfDicts = CDQAR.readCsvFileIntoListOfDicts(buildStatsTimingFile)
-
-   if not len(listOfDicts) == 1:
-     errMsg = buildStatsTimingFile+": WARNING: Contains "+\
+   # Check for error conditions and log them in errMsg
+   if listOfDicts == None:
+     errMsg = buildStatsTimingFile+": ERROR: File does not exist!"
+   elif not len(listOfDicts) == 1:
+     errMsg = buildStatsTimingFile+": ERROR: Contains "+\
        str(len(listOfDicts))+" != 1 data rows!"
    # ToDo: Check for other problems!
    else:
-     buildStatsTimingDict = listOfDicts[0] # Return the one dict
+     # No errors found, so return the first row (which is the only row)
+     buildStatsTimingDict = listOfDicts[0]
 
    return (buildStatsTimingDict, errMsg)
