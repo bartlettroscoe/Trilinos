@@ -6,6 +6,7 @@ from FindTribitsCiSupportDir import *
 import GeneralScriptSupport as GSS
 import CDashQueryAnalyzeReport as CDQAR
 
+from BuildStatsData import *
 
 #
 # Helper functions
@@ -29,25 +30,33 @@ import CDashQueryAnalyzeReport as CDQAR
 #
 def readBuildStatsTimingFileIntoDict(buildStatsTimingFile):
 
-   # Output data initialization
-   buildStatsTimingDict = None
-   errMsg = ""
-      
-   # Read CSV file into list of dicts and deal with direct errors
-   (listOfDicts, errMsg) = robustReadCsvFileIntoListOfDicts(buildStatsTimingFile)
+  # Output data initialization
+  buildStatsTimingDict = None
+  errMsg = ""
 
-   # Check for other error conditions and log them in errMsg
-   if listOfDicts == None:
-     None # The errMsg was set above!
-   elif not len(listOfDicts) == 1:
-     errMsg = buildStatsTimingFile+": ERROR: Contains "+\
-       str(len(listOfDicts))+" != 1 data rows!"
-   # ToDo: Check for other problems!
-   else:
-     # No errors found, so return the first row (which is the only row)
+  # Read CSV file into list of dicts and deal with direct errors
+  (listOfDicts, errMsg) = robustReadCsvFileIntoListOfDicts(buildStatsTimingFile)
+
+  # Check for other error conditions and log them in errMsg
+
+  if errMsg == "" and not len(listOfDicts) == 1:
+    errMsg = buildStatsTimingFile+": ERROR: Contains "+\
+      str(len(listOfDicts))+" != 1 data rows!"
+
+  if listOfDicts != None and errMsg == "":
+     # No errors found to this point, so grab the first row as the build stats dict
      buildStatsTimingDict = listOfDicts[0]
 
-   return (buildStatsTimingDict, errMsg)
+  if buildStatsTimingDict != None and errMsg == "":
+    errMsgBody = checkBuildStatsTimingDictHasError(buildStatsTimingDict)
+    if errMsgBody != "":
+      errMsg = buildStatsTimingFile+": "+errMsgBody
+
+  # If there was an error found, make sure not to return a dict object
+  if errMsg != "":
+    buildStatsTimingDict = None
+
+  return (buildStatsTimingDict, errMsg)
 
 
 # Call readCsvFileIntoListOfDicts() but make robust to basic read errors.
@@ -84,3 +93,20 @@ def robustReadCsvFileIntoListOfDicts(csvFile):
      errMsg = csvFile+": ERROR: File does not exist!"
    return (listOfDicts, errMsg)
 # ToDo: Move the above function to CsvFileUtils.py!
+
+
+# Assert that a build stats timing dict contains the required fields and has
+# valid data and the type of the datal
+#
+# Returns errMsg=="" if there is no error.  Otherwise, errMsg describes the
+# nature of the error.
+#
+def checkBuildStatsTimingDictHasError(buildStatsTimingDict):
+  errMsg = ""
+  for stdBuildStatColAndType in getStdBuildStatsColsAndTypesList():
+    requiredFieldName = stdBuildStatColAndType.colName()
+    val = buildStatsTimingDict.get(requiredFieldName, None)
+    if val == None:
+      errMsg = "ERROR: The required field '"+requiredFieldName+"' is missing!"
+      break
+  return errMsg

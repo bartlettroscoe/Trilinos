@@ -131,6 +131,16 @@ class test_readBuildStatsTimingFileIntoDict(unittest.TestCase):
     # readCsvFileIntoListOfDicts() for the error message it puts out.  That is
     # very
 
+  def test_missing_col_filename_fail(self):
+    buildStatsTimingFile = \
+      g_testBaseDir+"/bad_timing_build_stats_files/target1.timing.missing_col_filename"
+    numKeys_expected = 0
+    buildStatsTimingDict_expected = None
+    errMsg_expected = \
+      buildStatsTimingFile+": ERROR: The required field 'FileName' is missing!"
+    readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
+      numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
+
   # ToDo: Test missing different required headers
 
   # ToDo: Test for missing data from required column
