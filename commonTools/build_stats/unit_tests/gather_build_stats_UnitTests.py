@@ -117,11 +117,23 @@ class test_readBuildStatsTimingFileIntoDict(unittest.TestCase):
     readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
       numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
 
-  # ToDo: Test with garbage file contents
+  def test_junk_fail(self):
+    buildStatsTimingFile = \
+      g_testBaseDir+"/bad_timing_build_stats_files/target1.timing.junk"
+    numKeys_expected = 0
+    buildStatsTimingDict_expected = None
+    errMsg_expected = buildStatsTimingFile+": ERROR: Error, for CSV file"+\
+     " '"+buildStatsTimingFile+"' the data row 0 ['for this garbage'] has 1 entries"+\
+     " which does not macth the number of column headers 3!"
+    readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
+      numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
+    # NOTE: The above test is very much tied to the implementation of
+    # readCsvFileIntoListOfDicts() for the error message it puts out.  That is
+    # very
 
   # ToDo: Test missing different required headers
 
-  # ToDo: Test for missing data from required header
+  # ToDo: Test for missing data from required column
 
 
 #
