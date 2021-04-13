@@ -90,15 +90,6 @@ class test_readBuildStatsTimingFileIntoDict(unittest.TestCase):
     readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
       numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
 
-  def test_two_data_rows_fail(self):
-    buildStatsTimingFile = \
-      g_testBaseDir+"/bad_timing_build_stats_files/target1.timing.two_data_rows"
-    numKeys_expected = 0
-    buildStatsTimingDict_expected = None
-    errMsg_expected = buildStatsTimingFile+": ERROR: Contains 2 != 1 data rows!"
-    readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
-      numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
-
   def test_missing_fail(self):
     buildStatsTimingFile = \
       g_testBaseDir+"/file_does_not_exist.timing"
@@ -108,7 +99,25 @@ class test_readBuildStatsTimingFileIntoDict(unittest.TestCase):
     readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
       numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
 
-  # ToDo: Test empty CSV file
+  def test_two_data_rows_fail(self):
+    buildStatsTimingFile = \
+      g_testBaseDir+"/bad_timing_build_stats_files/target1.timing.two_data_rows"
+    numKeys_expected = 0
+    buildStatsTimingDict_expected = None
+    errMsg_expected = buildStatsTimingFile+": ERROR: Contains 2 != 1 data rows!"
+    readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
+      numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
+
+  def test_empty_fail(self):
+    buildStatsTimingFile = \
+      g_testBaseDir+"/bad_timing_build_stats_files/target1.timing.empty"
+    numKeys_expected = 0
+    buildStatsTimingDict_expected = None
+    errMsg_expected = buildStatsTimingFile+": ERROR: File is empty!"
+    readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
+      numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
+
+  # ToDo: Test with garbage file contents
 
   # ToDo: Test missing different required headers
 

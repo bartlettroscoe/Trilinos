@@ -33,14 +33,22 @@ def readBuildStatsTimingFileIntoDict(buildStatsTimingFile):
    buildStatsTimingDict = None
    errMsg = ""
       
-   # Read CSV file into list of dicts
+   # Read CSV file into list of dicts and deal with direct errors
    listOfDicts = None
+   exceptObj = None
    if os.path.exists(buildStatsTimingFile):
-     listOfDicts = CDQAR.readCsvFileIntoListOfDicts(buildStatsTimingFile)
-
-   # Check for error conditions and log them in errMsg
-   if listOfDicts == None:
+     try:
+       listOfDicts = CDQAR.readCsvFileIntoListOfDicts(buildStatsTimingFile)
+     except Exception as exceptObj:
+       if str(exceptObj).find("is empty which is not allowed") != 1:
+         errMsg = buildStatsTimingFile+": ERROR: File is empty!"
+   else:
      errMsg = buildStatsTimingFile+": ERROR: File does not exist!"
+
+   # Check for other error conditions and log them in errMsg
+   if listOfDicts == None:
+     if errMsg == "":
+       errMsg = buildStatsTimingFile+": ERROR: Unknown?"
    elif not len(listOfDicts) == 1:
      errMsg = buildStatsTimingFile+": ERROR: Contains "+\
        str(len(listOfDicts))+" != 1 data rows!"
