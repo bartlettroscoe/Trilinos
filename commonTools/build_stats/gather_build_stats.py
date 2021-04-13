@@ -34,27 +34,11 @@ def readBuildStatsTimingFileIntoDict(buildStatsTimingFile):
    errMsg = ""
       
    # Read CSV file into list of dicts and deal with direct errors
-   listOfDicts = None
-   exceptObj = None
-   if os.path.exists(buildStatsTimingFile):
-     try:
-       listOfDicts = CDQAR.readCsvFileIntoListOfDicts(buildStatsTimingFile)
-     except Exception as exceptObj:
-       #print("exceptObj: "+str(exceptObj))
-       if str(exceptObj).find("is empty which is not allowed") != -1:
-         errMsg = buildStatsTimingFile+": ERROR: File is empty!"
-       else:
-         errMsg = buildStatsTimingFile+": ERROR: "+str(exceptObj)
-       # NOTE: The above check is tried pretty tighlty to the implementation
-       # of readCsvFileIntoListOfDicts() in looking for a specific substring
-       # in the error message but it will still capture any error and report
-       # it through errMsg so this is actaully pretty robust.
-   else:
-     errMsg = buildStatsTimingFile+": ERROR: File does not exist!"
+   (listOfDicts, errMsg) = robustReadCsvFileIntoListOfDicts(buildStatsTimingFile)
 
    # Check for other error conditions and log them in errMsg
    if listOfDicts == None:
-     None: # The errMsg was set above!
+     None # The errMsg was set above!
    elif not len(listOfDicts) == 1:
      errMsg = buildStatsTimingFile+": ERROR: Contains "+\
        str(len(listOfDicts))+" != 1 data rows!"
@@ -64,3 +48,39 @@ def readBuildStatsTimingFileIntoDict(buildStatsTimingFile):
      buildStatsTimingDict = listOfDicts[0]
 
    return (buildStatsTimingDict, errMsg)
+
+
+# Call readCsvFileIntoListOfDicts() but make robust to basic read errors.
+#
+# Returns:
+#
+#   (listOfDicts, errMsg)
+#
+# Returns a valid list of dicts listOfDicts!=None unless some error occurs.
+# If some error occured, then errMsg will be sets to a string descrdibing what
+# the problem was.
+#
+# No exception should ever be thrown from this function.  This is useful to
+# use in cases where the existance or basic structure of a CSV file may be
+# broken.
+#
+def robustReadCsvFileIntoListOfDicts(csvFile):
+   listOfDicts = None
+   errMsg = ""
+   if os.path.exists(csvFile):
+     try:
+       listOfDicts = CDQAR.readCsvFileIntoListOfDicts(csvFile)
+     except Exception as exceptObj:
+       #print("exceptObj: "+str(exceptObj))
+       if str(exceptObj).find("is empty which is not allowed") != -1:
+         errMsg = csvFile+": ERROR: File is empty!"
+       else:
+         errMsg = csvFile+": ERROR: "+str(exceptObj)
+       # NOTE: The above check is tried pretty tighlty to the implementation
+       # of readCsvFileIntoListOfDicts() in looking for a specific substring
+       # in the error message but it will still capture any error and report
+       # it through errMsg so this is actaully pretty robust.
+   else:
+     errMsg = csvFile+": ERROR: File does not exist!"
+   return (listOfDicts, errMsg)
+# ToDo: Move the above function to CsvFileUtils.py!
