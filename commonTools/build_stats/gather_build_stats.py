@@ -8,6 +8,7 @@ import CDashQueryAnalyzeReport as CDQAR
 
 from BuildStatsData import *
 
+
 #
 # Helper functions
 #
@@ -116,3 +117,60 @@ def checkBuildStatsTimingDictHasError(buildStatsTimingDict):
       errMsg = "ERROR: For field '"+requiredFieldName+"' the string value '"+strVal+"'"+\
         " could not be converted to the expected type '"+requiredFieldType+"'!"
   return errMsg
+
+
+#
+# Helper functions for main()
+#
+
+
+#
+# Help message
+#
+
+usageHelp = r"""
+
+Gather up build stats from *.timing CSV files created by the magic_wrapper.py
+tool as a byproduct of building the various targets in a project.
+
+This will discard any *.timing files that don't have valid values in at least
+the fields:
+
+  TODO: PUT THESE IN!
+
+or if any other problem is found in a *.timing file.
+"""
+
+
+def injectCmndLineOptionsInParser(clp):
+
+  clp.add_argument(
+    "--base-dir", "-d", dest="baseDir", default="",
+    help="Base directory for project build dir containing the *.timing files." )
+
+  clp.add_argument("buildStatsCsvFile",
+    help="The build status CSV file to created on output." )
+
+
+def getCmndLineOptions():
+  from argparse import ArgumentParser, RawDescriptionHelpFormatter
+  clp = ArgumentParser(description=usageHelp,
+    formatter_class=RawDescriptionHelpFormatter)
+  injectCmndLineOptionsInParser(clp)
+  options = clp.parse_args(sys.argv[1:])
+  if options.baseDir == "":
+    options.baseDir = os.getcwd()
+  elif not os.path.exists(options.baseDir):
+    print("Error, the base dir '"+options.baseDir+"' does not exist!")
+  return options
+
+
+#
+#  Main()
+#
+
+if __name__ == '__main__':
+
+  inOptions = getCmndLineOptions()
+
+  print("inOptions = "+str(inOptions))
