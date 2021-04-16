@@ -14,7 +14,24 @@ from BuildStatsData import *
 #
 
 
-# Robustly Read a CSV build stats timing file created by magic_wrapper.py and
+# Robustly read all CSV build stats *timing files under a base dir and return
+# as a list of dicts (LOD).
+#
+def readAllValidTimingFiles(baseDir, printErrMsg=True):
+  listOfAllTimingFiles = getListOfAllTimingFiles(baseDir)
+  allValidTimingFilesLOD = []
+  for timingFile in listOfAllTimingFiles:
+    timingFileFullPath = baseDir+"/"+timingFile
+    (buildStatsTimingDict, errMsg) = \
+      readBuildStatsTimingFileIntoDict(timingFileFullPath)
+    if errMsg == "" and printErrMsg:
+      print(errMsg)
+    if not buildStatsTimingDict == None:
+      allValidTimingFilesLOD.append(buildStatsTimingDict)
+  return allValidTimingFilesLOD
+
+
+# Robustly read a CSV build stats timing file created by magic_wrapper.py and
 # return as dict.
 #
 # Returns tuple:
@@ -119,7 +136,9 @@ def checkBuildStatsTimingDictHasError(buildStatsTimingDict):
   return errMsg
 
 
-# Read all *.timing files in subdir
+# Get list of all *.timing files under baseDir and return paths relative to
+# baseDir.
+#
 def getListOfAllTimingFiles(baseDir):
   listOfAllTimingFiles = []
   for root, subdirs, files in os.walk(baseDir):

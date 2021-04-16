@@ -165,13 +165,45 @@ class test_getListOfAllTimingFiles(unittest.TestCase):
   def test_1(self):
     baseDir = g_testBaseDir+"/dummy_build_dir"
     listOfAllTimingFiles = GBS.getListOfAllTimingFiles(baseDir)
-    listOfAllTimingFiles.sort() # Avoid system-dependent behavior
     listOfAllTimingFiles_expected = [
       'packages/pkga/src/target2.timing',
       'some/base/dir/target1.timing',
       'some/base/target3.timing',
       ]
+    listOfAllTimingFiles.sort() # Avoid system-dependent behavior
+    listOfAllTimingFiles_expected.sort()
     self.assertEqual(listOfAllTimingFiles, listOfAllTimingFiles_expected)
+
+
+#############################################################################
+#
+# Test gather_build_stats.readAllValidTimingFiles()
+#
+#############################################################################
+
+
+class test_readAllValidTimingFiles(unittest.TestCase):
+
+  def test_1(self):
+    baseDir = g_testBaseDir+"/dummy_build_dir"
+    allValidTimingFiles = GBS.readAllValidTimingFiles(baseDir, printErrMsg=False)
+    allValidTimingFiles_expected = [
+      {'FileName': 'packages/pkga/src/target2.lib',
+       'FileSize': '870000',
+       'cpu_sec_user_mode': '1.38',
+       'elapsed_real_time_sec': '1.5',
+       'max_resident_size_Kb': '180000'},
+      {'FileName': './some/base/dir/target1.o',
+       'FileSize': '3300000',
+       'elapsed_real_time_sec': '3.5',
+       'max_resident_size_Kb': '240000',
+       'num_filesystem_outputs': '20368',
+       'num_involuntary_context_switch': '46'}]
+    # NOTE: The bad timign file 'some/base/target3.timing' was gracefully
+    # skipped!
+    allValidTimingFiles.sort() # Avoid system-dependent behavior
+    allValidTimingFiles_expected.sort()
+    self.assertEqual(allValidTimingFiles, allValidTimingFiles_expected)
 
 
 #
