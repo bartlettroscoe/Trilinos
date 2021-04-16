@@ -149,6 +149,15 @@ def getListOfAllTimingFiles(baseDir):
   return listOfAllTimingFiles
 
 
+# Get superset of all of the field names for a list of dicts
+#
+def getSupersetOfFieldNamesList(listOfDicts):
+  supersetOfFieldNames = set()
+  for aDict in listOfDicts:
+    supersetOfFieldNames = supersetOfFieldNames.union(aDict.keys())
+  return list(supersetOfFieldNames)
+
+
 #
 # Helper functions for main()
 #
