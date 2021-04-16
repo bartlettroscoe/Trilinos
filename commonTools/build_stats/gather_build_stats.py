@@ -119,6 +119,17 @@ def checkBuildStatsTimingDictHasError(buildStatsTimingDict):
   return errMsg
 
 
+# Read all *.timing files in subdir
+def getListOfAllTimingFiles(baseDir):
+  listOfAllTimingFiles = []
+  for root, subdirs, files in os.walk(baseDir):
+    relRoot = root.replace(baseDir+"/","")
+    for aFile in files:
+      if aFile.endswith(".timing"):
+        listOfAllTimingFiles.append(relRoot+"/"+aFile)
+  return listOfAllTimingFiles
+
+
 #
 # Helper functions for main()
 #

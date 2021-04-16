@@ -152,9 +152,26 @@ class test_readBuildStatsTimingFileIntoDict(unittest.TestCase):
     readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
       numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
 
-  # ToDo: Test missing different required headers
 
-  # ToDo: Test for missing data from required column
+#############################################################################
+#
+# Test gather_build_stats.getListOfAllTimingFiles()
+#
+#############################################################################
+
+
+class test_getListOfAllTimingFiles(unittest.TestCase):
+
+  def test_1(self):
+    baseDir = g_testBaseDir+"/dummy_build_dir"
+    listOfAllTimingFiles = GBS.getListOfAllTimingFiles(baseDir)
+    listOfAllTimingFiles.sort() # Avoid system-dependent behavior
+    listOfAllTimingFiles_expected = [
+      'packages/pkga/src/target2.timing',
+      'some/base/dir/target1.timing',
+      'some/base/target3.timing',
+      ]
+    self.assertEqual(listOfAllTimingFiles, listOfAllTimingFiles_expected)
 
 
 #
