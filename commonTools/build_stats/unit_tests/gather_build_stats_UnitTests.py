@@ -53,6 +53,13 @@ import GeneralScriptSupport as GSS
 
 g_pp = pprint.PrettyPrinter(indent=2)
 
+# Shared test data
+
+g_listOfDicts = [
+  {'field1':'11', 'field2':'12', 'field4':'14'},
+  {'field1':'21', 'field2':'22', 'field3':'23', 'field5':"25"},
+  ]
+
 
 #############################################################################
 #
@@ -186,6 +193,25 @@ class test_readBuildStatsTimingFileIntoDict(unittest.TestCase):
 
 #############################################################################
 #
+# Test gather_build_stats.writeDictOfListsToCsvFile()
+#
+#############################################################################
+
+class test_writeDictOfListsToCsvFile(unittest.TestCase):
+
+  def test_1(self):
+    dictOfLists = GBS.getDictOfListFromListOfDicts(g_listOfDicts)
+    csvFile = "test_writeDictOfListsToCsvFile_build_stats.csv"
+    csvFileText_expected = \
+      "field1,field2,field3,field4,field5\n11,12,,14,\n21,22,23,,25\n"
+    GBS.writeDictOfListsToCsvFile(dictOfLists, csvFile)
+    with open(csvFile, 'r') as csvFileHandle:
+      csvFileText = csvFileHandle.read()
+    self.assertEqual(csvFileText, csvFileText_expected)
+
+
+#############################################################################
+#
 # Test gather_build_stats.getListOfAllTimingFiles()
 #
 #############################################################################
@@ -211,11 +237,6 @@ class test_getListOfAllTimingFiles(unittest.TestCase):
 # Test gather_build_stats.getDictOfListFromListOfDicts()
 #
 #############################################################################
-
-g_listOfDicts = [
-  {'field1':'11', 'field2':'12', 'field4':'14'},
-  {'field1':'21', 'field2':'22', 'field3':'23', 'field5':"25"},
-  ]
 
 class test_getDictOfListFromListOfDicts(unittest.TestCase):
 

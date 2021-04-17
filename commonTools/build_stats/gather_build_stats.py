@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import csv
 
 from FindTribitsCiSupportDir import *
 import GeneralScriptSupport as GSS
@@ -113,6 +114,24 @@ def robustReadCsvFileIntoListOfDicts(csvFile):
 # ToDo: Move the above function to CsvFileUtils.py!
 
 
+# Write a dict of lists to a CSV File
+#
+def writeDictOfListsToCsvFile(dictOfLists, csvFile):
+  keysList = dictOfLists.keys()
+  keysList.sort()
+  numTotalRows = len(dictOfLists.get(keysList[0]))  # All lists are same length
+  numTotalKeys = len(keysList)
+  with open(csvFile, "w") as csvFileHandle:
+    csvWriter = csv.writer(csvFileHandle, delimiter=",", lineterminator="\n")
+    csvWriter.writerow(keysList)
+    for i in range(numTotalRows):
+      rowList = []
+      for aKey in keysList:
+        rowList.append(dictOfLists.get(aKey)[i])
+      csvWriter.writerow(rowList)
+# ToDo: Move the above function to CsvFileUtils.py!
+
+
 # Assert that a build stats timing dict contains the required fields and has
 # valid data and the type of the datal
 #
@@ -178,9 +197,6 @@ def getSupersetOfFieldNamesList(listOfDicts):
   for aDict in listOfDicts:
     supersetOfFieldNames = supersetOfFieldNames.union(aDict.keys())
   return list(supersetOfFieldNames)
-
-
-
 
 
 #
