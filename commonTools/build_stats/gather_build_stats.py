@@ -25,7 +25,7 @@ def readAllValidTimingFiles(baseDir, printErrMsg=True):
     timingFileFullPath = baseDir+"/"+timingFile
     (buildStatsTimingDict, errMsg) = \
       readBuildStatsTimingFileIntoDict(timingFileFullPath)
-    if errMsg == "" and printErrMsg:
+    if errMsg != "" and printErrMsg:
       print(errMsg)
     if not buildStatsTimingDict == None:
       allValidTimingFilesLOD.append(buildStatsTimingDict)
@@ -174,7 +174,7 @@ def getListOfAllTimingFiles(baseDir):
 # input dicts in the listOfDicts and any non-existant values will be given the
 # empty string "" instead of `None`.
 #
-def getDictOfListFromListOfDicts(listOfDicts):
+def getDictOfListsFromListOfDicts(listOfDicts):
   numTotalRows = len(listOfDicts)
   supersetOfFieldNamesList = getSupersetOfFieldNamesList(listOfDicts)
   dictOfLists = {}
@@ -250,7 +250,10 @@ def getCmndLineOptions():
 #
 
 if __name__ == '__main__':
-
   inOptions = getCmndLineOptions()
-
-  print("inOptions = "+str(inOptions))
+  print("Reading all *.timing files from under '"+inOptions.baseDir+"' ...")
+  allValidTimingFilesListOfDicts = readAllValidTimingFiles(inOptions.baseDir)
+  allValidTimingFilesDictOfLists = \
+    getDictOfListsFromListOfDicts(allValidTimingFilesListOfDicts)
+  writeDictOfListsToCsvFile(allValidTimingFilesDictOfLists,
+    inOptions.buildStatsCsvFile)

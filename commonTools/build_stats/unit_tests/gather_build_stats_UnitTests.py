@@ -200,7 +200,7 @@ class test_readBuildStatsTimingFileIntoDict(unittest.TestCase):
 class test_writeDictOfListsToCsvFile(unittest.TestCase):
 
   def test_1(self):
-    dictOfLists = GBS.getDictOfListFromListOfDicts(g_listOfDicts)
+    dictOfLists = GBS.getDictOfListsFromListOfDicts(g_listOfDicts)
     csvFile = "test_writeDictOfListsToCsvFile_build_stats.csv"
     csvFileText_expected = \
       "field1,field2,field3,field4,field5\n11,12,,14,\n21,22,23,,25\n"
@@ -234,14 +234,14 @@ class test_getListOfAllTimingFiles(unittest.TestCase):
 
 #############################################################################
 #
-# Test gather_build_stats.getDictOfListFromListOfDicts()
+# Test gather_build_stats.getDictOfListsFromListOfDicts()
 #
 #############################################################################
 
-class test_getDictOfListFromListOfDicts(unittest.TestCase):
+class test_getDictOfListsFromListOfDicts(unittest.TestCase):
 
   def test_1(self):
-    dictOfLists = GBS.getDictOfListFromListOfDicts(g_listOfDicts)
+    dictOfLists = GBS.getDictOfListsFromListOfDicts(g_listOfDicts)
     dictOfLists_expected = {
       'field1': ['11', '21'],
       'field2': ['12', '22'],
@@ -268,6 +268,28 @@ class test_getSupersetOfFieldNamesList(unittest.TestCase):
     supersetOfFieldNamesList_expected.sort()
     self.assertEqual(supersetOfFieldNamesList, supersetOfFieldNamesList_expected)
 
+
+
+#############################################################################
+#
+# Test gather_build_stats.py
+#
+#############################################################################
+
+class test_gather_build_stats_py(unittest.TestCase):
+
+  def test_dummy_build_dir(self):
+    csvFile = "test_gather_build_stats_py_build_stats.csv"
+    csvFileText_expected = \
+      "FileName,FileSize,cpu_sec_user_mode,elapsed_real_time_sec,max_resident_size_Kb,num_filesystem_outputs,num_involuntary_context_switch\n"+\
+      "packages/pkga/src/target2.lib,870000,1.38,1.5,180000,,\n"+\
+      "./some/base/dir/target1.o,3300000,,3.5,240000,20368,46\n"
+    cmnd = thisScriptsDir+"/../gather_build_stats.py"+\
+      " -d "+g_testBaseDir+"/dummy_build_dir "+csvFile
+    output = GSS.getCmndOutput(cmnd)
+    with open(csvFile, 'r') as csvFileHandle:
+      csvFileText = csvFileHandle.read()
+    self.assertEqual(csvFileText, csvFileText_expected)
 
 #
 # Run the unit tests!
