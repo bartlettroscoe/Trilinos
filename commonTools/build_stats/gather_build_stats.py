@@ -149,6 +149,28 @@ def getListOfAllTimingFiles(baseDir):
   return listOfAllTimingFiles
 
 
+# Fill in dict of lists for combined info from a list of dicts
+#
+# The output dict of lists will have the superset of keys from all of the
+# input dicts in the listOfDicts and any non-existant values will be given the
+# empty string "" instead of `None`.
+#
+def getDictOfListFromListOfDicts(listOfDicts):
+  numTotalRows = len(listOfDicts)
+  supersetOfFieldNamesList = getSupersetOfFieldNamesList(listOfDicts)
+  dictOfLists = {}
+  # Create dict of lists with all empty values
+  for keyName in supersetOfFieldNamesList:
+    dictOfLists.update( { keyName : [""] * numTotalRows } )
+  # Fill in the values from the dicts in the list
+  for i in range(numTotalRows):
+    aDict = listOfDicts[i]
+    for key, value in aDict.items():
+      dictOfLists.get(key)[i] = value
+  # Return the completed data-structure
+  return dictOfLists
+
+
 # Get superset of all of the field names for a list of dicts
 #
 def getSupersetOfFieldNamesList(listOfDicts):
@@ -156,6 +178,9 @@ def getSupersetOfFieldNamesList(listOfDicts):
   for aDict in listOfDicts:
     supersetOfFieldNames = supersetOfFieldNames.union(aDict.keys())
   return list(supersetOfFieldNames)
+
+
+
 
 
 #

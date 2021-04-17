@@ -212,20 +212,40 @@ class test_readAllValidTimingFiles(unittest.TestCase):
 #
 #############################################################################
 
+g_listOfDicts = [
+  {'field1':'11', 'field2':'12', 'field4':'14'},
+  {'field1':'21', 'field2':'22', 'field3':'23', 'field5':"25"},
+  ]
 
 class test_getSupersetOfFieldNamesList(unittest.TestCase):
 
   def test_1(self):
-    listOfDicts = [
-      {'field1':'11', 'field2':'12', 'field4':'14'},
-      {'field1':'21', 'field2':'22', 'field3':'23', 'field5':"25"},
-      ]
-    supersetOfFieldNamesList = GBS.getSupersetOfFieldNamesList(listOfDicts)
+    supersetOfFieldNamesList = GBS.getSupersetOfFieldNamesList(g_listOfDicts)
     supersetOfFieldNamesList_expected = \
       ['field1', 'field2', 'field3', 'field4', 'field5']
     supersetOfFieldNamesList.sort() # Make system independent
     supersetOfFieldNamesList_expected.sort()
     self.assertEqual(supersetOfFieldNamesList, supersetOfFieldNamesList_expected)
+
+
+#############################################################################
+#
+# Test gather_build_stats.getDictOfListFromListOfDicts()
+#
+#############################################################################
+
+class test_getDictOfListFromListOfDicts(unittest.TestCase):
+
+  def test_1(self):
+    dictOfLists = GBS.getDictOfListFromListOfDicts(g_listOfDicts)
+    dictOfLists_expected = {
+      'field1': ['11', '21'],
+      'field2': ['12', '22'],
+      'field3': ['', '23'],
+      'field4': ['14', ''],
+      'field5': ['', '25'],
+      }
+    self.assertEqual(dictOfLists, dictOfLists_expected)
 
 
 #
