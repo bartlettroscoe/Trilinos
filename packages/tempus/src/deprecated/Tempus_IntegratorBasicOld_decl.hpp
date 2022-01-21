@@ -6,6 +6,10 @@
 // ****************************************************************************
 // @HEADER
 
+#ifdef __GNUC__
+#  warning "This file Tempus_IntegratorBasicOld_decl.hpp is deprecated!  Use Tempus_IntegratorBasic_decl.hpp instead!"
+#endif
+
 #ifndef Tempus_IntegratorBasicOld_decl_hpp
 #define Tempus_IntegratorBasicOld_decl_hpp
 
@@ -69,9 +73,9 @@ public:
     virtual void endIntegrator();
     /// Return a copy of the Tempus ParameterList
     virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()
-      override { return tempusPL_; }
+      { return tempusPL_; }
     virtual void setTempusParameterList(
-      Teuchos::RCP<Teuchos::ParameterList> pl) override
+      Teuchos::RCP<Teuchos::ParameterList> pl)
     {
       if (tempusPL_==Teuchos::null) tempusPL_=Teuchos::parameterList("Tempus");
       if (pl != Teuchos::null) *tempusPL_ = *pl;
