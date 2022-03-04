@@ -9,11 +9,11 @@ CMake
   - Switch to modern CMake targets in IMPORTED library targets in installed
     <Package>Config.cmake files
 
-    With switch to modern CMake IMPORTED targets, now include directories and
-    critical compiler options and include directories (and other modern CMake
-    usage requirements) are propagated through linking to the IMPORTED library
+    With the switch to modern CMake IMPORTED targets, now include directories
+    (along with critical compiler options and other modern CMake usage
+    requirements) are propagated through linking to the IMPORTED library
     targets in downstream customer CMake projects.  This makes the usage of
-    the variables `<Trilinos>_INCLUDE_DIRS` and `Trilinos__TPL_INCLUDE_DIRS`
+    the variables `<Trilinos>_INCLUDE_DIRS` and `Trilinos_TPL_INCLUDE_DIRS`
     unnecessary in downstream CMake projects.  However, this change will also
     cause downstream CMake projects to pull in include directories as `SYSTEM`
     (e.g. using `-isystem` instead of `-I`) from IMPORTED library targets.
