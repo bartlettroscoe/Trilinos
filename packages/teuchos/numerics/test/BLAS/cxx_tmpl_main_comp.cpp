@@ -63,10 +63,10 @@ using Teuchos::ScalarTraits;
 // The difference in OType should enable the comparison of the templated routines with the "officially" supported BLAS.
 
 // Define the scalar type
-#ifdef HAVE_TEUCHOS_COMPLEX
-#define SType     std::complex<double>
+#ifdef HAVE_TEUCHOS_COMPLEX_DOUBLE
+#  define SType     std::complex<double>
 #else
-#define SType     double
+#  define SType     double
 #endif
 
 // Define the ordinal type
@@ -81,10 +81,10 @@ using Teuchos::ScalarTraits;
 // random numbers in [-SCALARMAX, SCALARMAX] will be generated.
 // Set SCALARMAX to a floating-point value (e.g. 10.0) to enable floating-point random number generation, such that
 // random numbers in (-SCALARMAX - 1, SCALARMAX + 1) will be generated.
-#ifdef HAVE_TEUCHOS_COMPLEX
-#define SCALARMAX  SType(10,0)
+#ifdef HAVE_TEUCHOS_COMPLEX_DOUBLE
+#  define SCALARMAX  SType(10,0)
 #else
-#define SCALARMAX  SType(10)
+#  define SCALARMAX  SType(10)
 #endif
 // These define the number of tests to be run for each individual BLAS routine.
 #define ROTGTESTS  5
@@ -1338,7 +1338,7 @@ int main(int argc, char *argv[])
 
     UPLO = RandomUPLO();
     TRANS = RandomTRANS();
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
     while (TRANS == Teuchos::CONJ_TRANS) { TRANS = RandomTRANS(); }
 #endif
 

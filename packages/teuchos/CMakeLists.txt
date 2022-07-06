@@ -149,26 +149,56 @@ TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
-ASSERT_DEFINED(Trilinos_ENABLE_COMPLEX_DOUBLE)
-ASSERT_DEFINED(Trilinos_ENABLE_COMPLEX_FLOAT)
-IF (Trilinos_ENABLE_COMPLEX_DOUBLE OR Trilinos_ENABLE_COMPLEX_FLOAT)
-  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  TRUE)
+IF (Trilinos_ENABLE_FLOAT)
+  SET(${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT  TRUE)
 ELSE()
-  # If Teuchos is configured as its own CMake project, independent of
-  # Trilinos, then Teuchos_ENABLE_COMPLEX could be OFF by default.
-  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  FALSE)
+  SET(${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT  FALSE)
+  # ABove will be set in case Teuchos is confiugred as its own CMake project!
 ENDIF()
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_COMPLEX
-  HAVE_TEUCHOS_COMPLEX
-  "Enable Teuchos features for complex data type."
-  ${${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT}
+  ${PACKAGE_NAME}_ENABLE_FLOAT
+  HAVE_TEUCHOS_FLOAT
+  "Enable Teuchos features for float data type."
+  ${${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT}
   )
 
-# ToDo: Above, split ${PACKAGE_NAME}_ENABLE_COMPLEX into
-# ${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT and
-# ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE.  See Trilinos GitHub #362.
+set(${PACKAGE_NAME}_ENABLE_COMPLEX "OFF"
+  CACHE BOOL
+  "Enable Teuchos features for complex scalar types by default."
+  )
+
+IF ( ${PACKAGE_NAME}_ENABLE_FLOAT
+    AND (Trilinos_ENABLE_COMPLEX_FLOAT OR ${PACKAGE_NAME}_ENABLE_COMPLEX)
+  )
+  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT_DEFAULT  FALSE)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT
+  HAVE_TEUCHOS_COMPLEX_FLOAT
+  "Enable Teuchos features for complex<double> scalar type."
+  ${${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT_DEFAULT}
+  )
+
+IF (Trilinos_ENABLE_COMPLEX_DOUBLE OR ${PACKAGE_NAME}_ENABLE_COMPLEX)
+  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE_DEFAULT  FALSE)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE
+  HAVE_TEUCHOS_COMPLEX_DOUBLE
+  "Enable Teuchos features for complex<double> scalar type."
+  ${${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE_DEFAULT}
+  )
+
+IF (${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT OR ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE)
+  # At least some complex support is enabled
+  SET(HAVE_TEUCHOS_COMPLEX ON)
+ELSE()
+  SET(HAVE_TEUCHOS_COMPLEX OFF)
+ENDIF()
 
 # Check whether the C++ compiler can compile __attribute__((constructor)).
 INCLUDE(CheckCXXAttributeConstructorCompiles)
@@ -216,7 +246,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PROJECT_NAME}_ENABLE_DEBUG}
   )
 
-IF (${PACKAGE_NAME}_ENABLE_COMPLEX)
+IF (${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE)
   #
   # The check needs to run code, so give cross-compiling users a
   # bypass.  This is not a complete check, but we have an error test
@@ -250,37 +280,23 @@ IF (${PACKAGE_NAME}_ENABLE_COMPLEX)
   GLOBAL_SET(HAVE_COMPLEX_BLAS
              NOT HAVE_COMPLEX_BLAS_PROBLEM OR HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM OR HAVE_VECLIB_COMPLEX_BLAS)
 
-ELSE() # NOT ${PACKAGE_NAME}_ENABLE_COMPLEX
+ELSE() # NOT ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE
 
   # Forbid users from setting HAVE_COMPLEX_BLAS=ON, if
-  # Teuchos_ENABLE_COMPLEX is OFF.  Use two separate IF statements,
+  # Teuchos_ENABLE_COMPLEX_DOUBLE is OFF.  Use two separate IF statements,
   # because "DEFINED X AND NOT X" could be bad syntax if X is NOT
   # defined.
   IF (DEFINED HAVE_COMPLEX_BLAS)
     IF (NOT HAVE_COMPLEX_BLAS)
-      MESSAGE(FATAL_ERROR "Teuchos: ${PACKAGE_NAME}_ENABLE_COMPLEX is OFF, yet you set HAVE_COMPLEX_BLAS=ON.  Please do not do this.  You normally do not need to set HAVE_COMPLEX_BLAS explicitly.  If for some reason you do, then it must have the same value as ${PACKAGE_NAME}_ENABLE_COMPLEX.")
+      MESSAGE(FATAL_ERROR "Teuchos: ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE is OFF, yet you set HAVE_COMPLEX_BLAS=ON.  Please do not do this.  You normally do not need to set HAVE_COMPLEX_BLAS explicitly.  If for some reason you do, then it must have the same value as ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE.")
     ENDIF()
   ENDIF()
 
-ENDIF() # ${PACKAGE_NAME}_ENABLE_COMPLEX
+ENDIF() # ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE
 
 #
 # C) Set up package-specific options
 #
-
-IF (Trilinos_ENABLE_FLOAT)
-  SET(${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT  TRUE)
-ELSE()
-  SET(${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT  FALSE)
-  # ABove will be set in case Teuchos is confiugred as its own CMake project!
-ENDIF()
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_FLOAT
-  HAVE_TEUCHOS_FLOAT
-  "Enable Teuchos features for float data type."
-  ${${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT}
-  )
 
 IF (Trilinos_ENABLE_LONG_DOUBLE)
   SET(${PACKAGE_NAME}_ENABLE_LONG_DOUBLE_DEFAULT  TRUE)

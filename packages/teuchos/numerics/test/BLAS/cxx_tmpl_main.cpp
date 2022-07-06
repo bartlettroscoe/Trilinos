@@ -63,17 +63,17 @@ using Teuchos::ScalarTraits;
 // SType2 should generally be a control datatype "officially" supported by the BLAS; SType1 should be the experimental type being checked.
 
 // Define the first scalar type
-#ifdef HAVE_TEUCHOS_COMPLEX
-#define SType1     std::complex<float>
+#ifdef HAVE_TEUCHOS_COMPLEX_FLOAT
+#  define SType1     std::complex<float>
 #else
-#define SType1     float
+#  define SType1     float
 #endif
 
 // Define the second scalar type
-#ifdef HAVE_TEUCHOS_COMPLEX
-#define SType2     std::complex<double>
+#ifdef HAVE_TEUCHOS_COMPLEX_DOUBLE
+#  define SType2     std::complex<double>
 #else
-#define SType2     double
+#  define SType2     double
 #endif
 
 // Define the ordinal type
@@ -1225,7 +1225,7 @@ int main(int argc, char *argv[])
 
     UPLO = RandomUPLO();
     TRANS = RandomTRANS();
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
     while (TRANS == Teuchos::CONJ_TRANS) { TRANS = RandomTRANS(); }
 #endif
 

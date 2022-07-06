@@ -112,11 +112,14 @@ namespace Teuchos {
 //Explicitly instantiating these templates for windows due to an issue with
 //resolving them when linking dlls.
 #ifdef _MSC_VER
-#  ifdef HAVE_TEUCHOS_COMPLEX
+#  ifdef HAVE_TEUCHOS_COMPLEX_FLOAT
      template class BLAS<long int, std::complex<float> >;
-     template class BLAS<long int, std::complex<double> >;
 #  endif
      template class BLAS<long int, float>;
+#endif
+#  ifdef HAVE_TEUCHOS_COMPLEX_DOUBLE
+     template class BLAS<long int, std::complex<double> >;
+#  endif
      template class BLAS<long int, double>;
 #endif
 
@@ -280,7 +283,7 @@ namespace Teuchos {
   void BLAS<int, double>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int& m, const int& n, const double& alpha, const double* A, const int& lda, double* B, const int& ldb) const
   { DTRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#ifdef HAVE_TEUCHOS_COMPLEX_FLOAT
 
   // *************************** BLAS<int,std::complex<float> > DEFINITIONS ******************************
 
@@ -454,6 +457,10 @@ namespace Teuchos {
   void BLAS<int, std::complex<float> >::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int& m, const int& n, const std::complex<float> alpha, const std::complex<float>* A, const int& lda, std::complex<float>* B, const int& ldb) const
   { CTRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
 
+#endif /* HAVE_TEUCHOS_COMPLEX_FLOAT */
+
+#ifdef HAVE_TEUCHOS_COMPLEX_DOUBLE
+
   // *************************** BLAS<int,std::complex<double> > DEFINITIONS ******************************
 
   void BLAS<int, std::complex<double> >::ROTG(std::complex<double>* da, std::complex<double>* db, double* c, std::complex<double>* s) const
@@ -557,6 +564,6 @@ namespace Teuchos {
   void BLAS<int, std::complex<double> >::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int& m, const int& n, const std::complex<double> alpha, const std::complex<double>* A, const int& lda, std::complex<double>* B, const int& ldb) const
   { ZTRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
 
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif // HAVE_TEUCHOS_COMPLEX_DOUBLE
 
 }

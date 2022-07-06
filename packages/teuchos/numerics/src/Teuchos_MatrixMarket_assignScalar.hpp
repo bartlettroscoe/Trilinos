@@ -80,7 +80,7 @@ namespace Teuchos {
         }
       };
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
       // Partial specialization for complex Scalar types.
       // MagType is the template parameter for std::complex.
       template<class MagType>
@@ -94,7 +94,7 @@ namespace Teuchos {
           val = std::complex<MagType> (real, imag);
         }
       };
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif // defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
       /// \fn assignScalar
       /// \brief Assign to a Scalar value: val = S(real, imag).

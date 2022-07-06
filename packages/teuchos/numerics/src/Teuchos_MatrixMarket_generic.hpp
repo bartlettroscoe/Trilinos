@@ -43,9 +43,9 @@
 #define __Teuchos_MatrixMarket_generic_hpp
 
 #include "Teuchos_ConfigDefs.hpp"
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 #  include <complex>
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif
 #include <iostream>
 #include <sstream>
 #include <stdexcept>

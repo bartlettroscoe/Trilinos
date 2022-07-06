@@ -1217,8 +1217,7 @@ struct ScalarTraits<mp_real>
 #endif // HAVE_TEUCHOS_ARPREC
 
 
-#ifdef HAVE_TEUCHOS_COMPLEX
-
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
 // Partial specialization for std::complex numbers templated on real type T
 template<class T>
@@ -1297,7 +1296,7 @@ struct ScalarTraits<
   static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(x,y); }
   static inline ComplexT pi() { return ScalarTraits<T>::pi(); }
 };
-#endif //  HAVE_TEUCHOS_COMPLEX
+#endif // defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
 #ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
 // Partial specialization for Kokkos::complex<T>

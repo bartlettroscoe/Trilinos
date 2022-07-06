@@ -443,19 +443,19 @@ bool masterTestComm(
   result = testComm<Ordinal,double>(*comm,out);
   if(!result) success = false;
 
-#ifdef HAVE_TEUCHOS_COMPLEX
-
-#  ifdef HAVE_TEUCHOS_FLOAT
+#ifdef HAVE_TEUCHOS_COMPLEX_FLOAT
 
   result = testComm<Ordinal,std::complex<float> >(*comm,out);
   if(!result) success = false;
 
-#  endif // HAVE_TEUCHOS_FLOAT
+#  endif // HAVE_TEUCHOS_COMPLEX_FLOAT
+
+#ifdef HAVE_TEUCHOS_COMPLEX_DOUBLE
 
   result = testComm<Ordinal,std::complex<double> >(*comm,out);
   if(!result) success = false;
 
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif // HAVE_TEUCHOS_COMPLEX_FLOAT
 
   return success;
 

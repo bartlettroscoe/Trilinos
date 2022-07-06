@@ -1058,7 +1058,7 @@ UNIT_TEST_GROUP_SIGNED_INTEGER( long_long_type )
 UNIT_TEST_GROUP_ANY_INTEGER( unsigned_long_long_type )
 
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
 #include <complex>
 
@@ -1164,9 +1164,6 @@ TEUCHOS_UNIT_TEST( asSafe, complexToComplex ) {
 
 }
 
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif // defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
 } // namespace (anonymous)
-
-
-

@@ -493,7 +493,7 @@ namespace Teuchos {
                 const bool tolerant);
     };
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
     // Partial specialization for complex Scalar types.
     template<class Callback, class Ordinal, class Scalar>
     class CoordDataReader<Callback, Ordinal, Scalar, true> :
@@ -543,7 +543,7 @@ namespace Teuchos {
         return localSuccess;
       }
     };
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif // defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
     // Partial specialization for real Scalar types.
     template<class Callback, class Ordinal, class Scalar>

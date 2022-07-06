@@ -75,14 +75,14 @@
 #include <cerrno>
 #include <climits>
 
-#ifdef HAVE_TEUCHOS_COMPLEX
-#include <complex>
-#endif // HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
+#  include <complex>
+#endif
 
 #ifdef HAVE_TEUCHOS_QD
-#include <qd/qd_real.h>
-#include <qd/dd_real.h>
-#endif // HAVE_TEUCHOS_QD
+#  include <qd/qd_real.h>
+#  include <qd/dd_real.h>
+#endif
 
 namespace Teuchos {
 
@@ -2462,7 +2462,7 @@ public:
 // * Conversions from built-in integer types to std::complex<T>.
 //
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
 //! Convert short to std::complex<RealType>, for any RealType.
 template<class RealType>
@@ -2576,7 +2576,6 @@ public:
   }
 };
 
-
 //! Convert std::complex<double> to std::complex<float>.
 template<>
 class ValueTypeConversionTraits<std::complex<float>, std::complex<double> > {
@@ -2591,7 +2590,7 @@ public:
   }
 };
 
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif // defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
 //
 // * Conversions for dd_real and qd_real

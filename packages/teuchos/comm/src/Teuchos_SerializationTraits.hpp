@@ -447,19 +447,23 @@ class SerializationTraits<Ordinal,qd_real>
 {};
 #endif
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#ifdef HAVE_TEUCHOS_COMPLEX_FLOAT
 
 template<typename Ordinal>
 class SerializationTraits<Ordinal,std::complex<float> >
   : public DirectSerializationTraits<Ordinal,std::complex<float> >
 {};
 
+#endif // HAVE_TEUCHOS_COMPLEX_FLOAT
+
+#ifdef HAVE_TEUCHOS_COMPLEX_DOUBLE
+
 template<typename Ordinal>
 class SerializationTraits<Ordinal,std::complex<double> >
   : public DirectSerializationTraits<Ordinal,std::complex<double> >
 {};
 
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif // HAVE_TEUCHOS_COMPLEX_DOUBLE
 
 // Partial specialization for long long.
 // On platforms with sizeof(ptrdiff_t) <= sizeof(long long),

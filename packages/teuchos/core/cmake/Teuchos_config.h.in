@@ -109,9 +109,13 @@
 
 #define TEUCHOS_ORDINAL_TYPE @Teuchos_ORDINAL_TYPE@
 
+#cmakedefine HAVE_TEUCHOS_COMPLEX_DOUBLE
+#cmakedefine HAVE_TEUCHOS_COMPLEX_FLOAT
+
+/* Defined if any complex support (float or double) is enabled */ 
 #cmakedefine HAVE_TEUCHOS_COMPLEX
 
-// This exists only for backwards compatibility.
+/* This exists only for backwards compatibility. */
 #define HAVE_TEUCHOS_LONG_LONG_INT 1
 
 #cmakedefine HAVE_TEUCHOS_DEBUG

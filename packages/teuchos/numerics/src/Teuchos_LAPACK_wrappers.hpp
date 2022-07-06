@@ -149,7 +149,7 @@
 #define ILAENV_F77  F77_BLAS_MANGLE(ilaenv,ILAENV)
 #define DGEQP3_F77  F77_BLAS_MANGLE(dgeqp3,DGEQP3)
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
 #define ZGEQRF_F77  F77_BLAS_MANGLE(zgeqrf,ZGEQRF)
 #define ZGEQR2_F77  F77_BLAS_MANGLE(zgeqr2,ZGEQR2)
@@ -212,7 +212,7 @@
 #define ZLARNV_F77  F77_BLAS_MANGLE(zlarnv,ZLARNV)
 #define ZGEQP3_F77  F77_BLAS_MANGLE(zgeqp3,ZGEQP3)
 
-#endif /* HAVE_TEUCHOS_COMPLEX */
+#endif /* defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE) */
 
 #define SGEQRF_F77  F77_BLAS_MANGLE(sgeqrf,SGEQRF)
 #define SGEQR2_F77  F77_BLAS_MANGLE(sgeqr2,SGEQR2)
@@ -287,7 +287,7 @@
 #define SLARNV_F77  F77_BLAS_MANGLE(slarnv,SLARNV)
 #define SGEQP3_F77  F77_BLAS_MANGLE(sgeqp3,SGEQP3)
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
 #define CGEQRF_F77  F77_BLAS_MANGLE(cgeqrf,CGEQRF)
 #define CGEQR2_F77  F77_BLAS_MANGLE(cgeqr2,CGEQR2)
@@ -350,7 +350,7 @@
 #define CLARNV_F77  F77_BLAS_MANGLE(clarnv,CLARNV)
 #define CGEQP3_F77  F77_BLAS_MANGLE(cgeqp3,CGEQP3)
 
-#endif /* HAVE_TEUCHOS_COMPLEX */
+#endif /* defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE) */
 
 
 /* C) Define the function prototypes for all platforms! */
@@ -535,7 +535,7 @@ int PREFIX ILAENV_F77( const int* ispec, const char* name, const char* opts, con
 
 double PREFIX DLAPY2_F77(const double* x, const double* y);
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
 // Double precision complex LAPACK linear solvers
 void PREFIX ZGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrhs, std::complex<double>* a, const int* lda, std::complex<double>* b, const int* ldb, std::complex<double>* work, const int* lwork, int* info);
@@ -692,7 +692,7 @@ std::complex<double> PREFIX ZLARND_F77(const int* idist, int* seed);
 void PREFIX CLARNV_F77(const int* idist, int* seed, const int* n, std::complex<float>* v);
 void PREFIX ZLARNV_F77(const int* idist, int* seed, const int* n, std::complex<double>* v);
 
-#endif /* HAVE_TEUCHOS_COMPLEX */
+#endif /*  defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE) */
 
 #ifdef __cplusplus
 }

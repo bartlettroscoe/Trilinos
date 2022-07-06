@@ -415,30 +415,51 @@ TEUCHOS_UNIT_TEST( MpiTypeTraits, CompareWithRawMpi )
   TEST_ASSERT( ! MpiTypeTraits<float>::needsFree );
   TEST_ASSERT( ! MpiTypeTraits<double>::needsFree );
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#ifdef HAVE_TEUCHOS_COMPLEX_FLOAT
 
   TEST_ASSERT( MpiTypeTraits<std::complex<float> >::isSpecialized );
-  TEST_ASSERT( MpiTypeTraits<std::complex<double> >::isSpecialized );
 
   MPI_Datatype dt_complex_float =
-    MpiTypeTraits<std::complex<float> >::getType ();
-  MPI_Datatype dt_complex_double =
     MpiTypeTraits<std::complex<float> >::getType ();
 
 // We make no promises about this for MPI_VERSION < 3.
 #if MPI_VERSION >= 3
   TEST_ASSERT( ! MpiTypeTraits<std::complex<float> >::needsFree );
-  TEST_ASSERT( ! MpiTypeTraits<std::complex<double> >::needsFree );
 #endif // MPI_VERSION >= 3
 
   if (MpiTypeTraits<std::complex<float> >::needsFree) {
     (void) MPI_Type_free (&dt_complex_float);
   }
+
+#endif // HAVE_TEUCHOS_COMPLEX_FLOAT
+
+#ifdef HAVE_TEUCHOS_COMPLEX_DOUBLE
+
+  TEST_ASSERT( MpiTypeTraits<std::complex<double> >::isSpecialized );
+
+  MPI_Datatype dt_complex_double =
+    MpiTypeTraits<std::complex<double> >::getType ();
+
+// We make no promises about this for MPI_VERSION < 3.
+#if MPI_VERSION >= 3
+  TEST_ASSERT( ! MpiTypeTraits<std::complex<double> >::needsFree );
+#endif // MPI_VERSION >= 3
+
   if (MpiTypeTraits<std::complex<double> >::needsFree) {
     (void) MPI_Type_free (&dt_complex_double);
   }
-#endif // HAVE_TEUCHOS_COMPLEX
+
+#endif // HAVE_TEUCHOS_COMPLEX_DOUBLE
+
 }
+
+
+
+
+
+
+
+
 
 #endif // MPI_VERSION >= 2
 

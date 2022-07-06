@@ -53,18 +53,18 @@ using Teuchos::SerialDenseMatrix;
 using Teuchos::SerialDenseVector;
 
 #define OTYPE int
-#ifdef HAVE_TEUCHOS_COMPLEX
-#define STYPE std::complex<double>
+#ifdef HAVE_TEUCHOS_COMPLEX_DOUBLE
+#  define STYPE std::complex<double>
 #else
-#define STYPE double
+#  define STYPE double
 #endif
 
 // SCALARMAX defines the maximum positive value (with a little leeway) generated for matrix and vector elements and scalars:
 // random numbers in [-SCALARMAX, SCALARMAX] will be generated.
-#ifdef HAVE_TEUCHOS_COMPLEX
-#define SCALARMAX  STYPE(10,0)
+#ifdef HAVE_TEUCHOS_COMPLEX_DOUBLE
+#  define SCALARMAX  STYPE(10,0)
 #else
-#define SCALARMAX  STYPE(10)
+#  define SCALARMAX  STYPE(10)
 #endif
 
 template<typename TYPE>
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
   int returnCode = 0;
   std::string testName = "", testType = "";
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
   testType = "COMPLEX";
 #else
   testType = "REAL";
@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
   testName = "Generating right-hand side vector using A*x, where x is a random vector:";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
   DVector bct(n);
   returnCode = bct.multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ScalarTraits<STYPE>::one() , *A1, *x1t, ScalarTraits<STYPE>::zero());
   testName = "Generating right-hand side vector using A^H*x, where x is a random vector:";
@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
   returnCode = bt.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, ScalarTraits<STYPE>::one() , *A1, *x1t, ScalarTraits<STYPE>::zero());
   testName = "Generating right-hand side vector using A^T*x, where x is a random vector:";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
-#endif
+#endif // defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
   DVector bp, bp2;
   Teuchos::RCP<DMatrix> Q;
   DVector tmp(n), tmp2(m);
@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
   numberFailedTests += CompareVectors( tmp, xhat, tol );
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
   testName = "Simple solve: formQ() solve with explicit Q implicit R random A (NO_TRANS):";
   Q = solver1.getQ();
   bp.multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, 1.0, *Q, b, 0.0);
@@ -220,9 +220,9 @@ int main(int argc, char* argv[])
   returnCode = solver1.solveR( Teuchos::NO_TRANS, tmp );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
   numberFailedTests += CompareVectors( tmp, xhat, tol );
-#endif
+#endif // defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
   // Conjugate tranpose solve (can be done after factorization, since factorization doesn't depend on this)
   xhatt.putScalar( ScalarTraits<STYPE>::zero() );
   solver1.setVectors( Teuchos::rcp( &xhatt, false ), Teuchos::rcp( &bct, false ) );
@@ -282,7 +282,7 @@ int main(int argc, char* argv[])
     numberFailedTests += CompareVectors(*x1t, tmp2, tol );
   numberFailedTests += CompareVectors( tmp2, xhatt, tol );
 
-#endif
+#endif // defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
 
   // Test2:  Solve with matrix equilibration.
 
@@ -295,7 +295,7 @@ int main(int argc, char* argv[])
   xhat.putScalar( ScalarTraits<STYPE>::zero() );
   xhatt.putScalar( ScalarTraits<STYPE>::zero() );
   b.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, ScalarTraits<STYPE>::one() , *A2, *x2, ScalarTraits<STYPE>::zero());
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
   bct.multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ScalarTraits<STYPE>::one() , *A2, *x2t, ScalarTraits<STYPE>::zero());
 #else
   bt.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, ScalarTraits<STYPE>::one() , *A2, *x2t, ScalarTraits<STYPE>::zero());
@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
   numberFailedTests += CompareVectors( *x2, xhat, tol );
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX_FLOAT) || defined(HAVE_TEUCHOS_COMPLEX_DOUBLE)
   // Conjugate tranpose solve (can be done after factorization, since factorization doesn't depend on this)
   xhatt.putScalar( ScalarTraits<STYPE>::zero() );
   solver2.setVectors( Teuchos::rcp( &xhatt, false ), Teuchos::rcp( &bct, false ) );
