@@ -119,11 +119,13 @@ if [[ "${SEMS_MODULEFILES_ROOT}" == "" ]] ; then
 fi
 
 module purge
-module load sems-archive-env
-module load sems-archive-git/2.10.1
 
-module load sems-archive-cmake/3.19.1
-module load sems-archive-ninja_fortran/1.10.0
+module load sems-archive-env # For old compilers and TPLs
+
+module load sems-git/2.29.0
+
+module load sems-cmake/3.23.1
+module load sems-ninja/1.10.1
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "CUDA" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
