@@ -3546,6 +3546,9 @@ public:
 
     void
     transferAndFillComplete_getCallersParamters(
+      // Input args
+      const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& rowTransfer,
+      const Teuchos::RCP<Teuchos::ParameterList>& params,
       // Output args
       bool &isMM,
       bool &reverseMode,
