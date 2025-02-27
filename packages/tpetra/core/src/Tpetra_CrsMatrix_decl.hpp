@@ -282,6 +282,8 @@ namespace Tpetra {
                   MultiVector<SC,LO,GO,NO> & R);
   }
 
+  namespace Details { class CommRequest; }
+
   /// \class CrsMatrix
   /// \brief Sparse matrix that presents a row-oriented interface that
   ///   lets users read or modify entries.
@@ -3539,6 +3541,23 @@ public:
                              const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                              const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
+
+    /// Helpers for transferAndFillComplete()
+
+    void
+    transferAndFillComplete_getCallersParamters(
+      // Input args
+      const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& rowTransfer,
+      const Teuchos::RCP<Teuchos::ParameterList>& params,
+      // Output args
+      bool &isMM,
+      bool &reverseMode,
+      bool &restrictComm,
+      Teuchos::RCP<Teuchos::ParameterList> &matrixparams,
+      bool &useKokkosPath,
+      std::shared_ptr< ::Tpetra::Details::CommRequest> &iallreduceRequest,
+      int &reduced_mismatch
+      ) const;
 
     /// \brief Common implementation detail of insertGlobalValues and
     ///   insertGlobalValuesFiltered.
