@@ -7746,6 +7746,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     //
     // Get the caller's parameters
     //
+
+// Begin transferAndFillComplete_getCallersParamters()
+
     bool isMM = false; // optimize for matrix-matrix ops.
     bool reverseMode = false; // Are we in reverse mode?
     bool restrictComm = false; // Do we need to restrict the communicator?
@@ -7784,6 +7787,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
        ::Tpetra::Details::iallreduce (mismatch, reduced_mismatch,
                                       Teuchos::REDUCE_MAX, * (getComm ()));
    }
+
+// End transferAndFillComplete_getCallersParamters()
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
@@ -9141,6 +9146,28 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       std::cerr << os.str ();
     }
   } //transferAndFillComplete
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  transferAndFillComplete_getCallersParamters(
+    // Output args
+    bool &isMM,
+    bool &reverseMode,
+    bool &restrictComm,
+    Teuchos::RCP<Teuchos::ParameterList> &matrixparams,
+    bool &useKokkosPath,
+    std::shared_ptr< ::Tpetra::Details::CommRequest> &iallreduceRequest,
+    int &reduced_mismatch
+    ) const
+  {
+
+
+
+  }
+
+
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
