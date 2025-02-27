@@ -7747,55 +7747,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // Get the caller's parameters
     //
 
-#define USE_TRANSFERANDFILLCOMPLETE_GETCALLERSPARAMTERS 1
-
-#if !USE_TRANSFERANDFILLCOMPLETE_GETCALLERSPARAMTERS
-
-// Begin transferAndFillComplete_getCallersParamters()
-
-    bool isMM = false; // optimize for matrix-matrix ops.
-    bool reverseMode = false; // Are we in reverse mode?
-    bool restrictComm = false; // Do we need to restrict the communicator?
-
-    int mm_optimization_core_count =
-      Behavior::TAFC_OptimizationCoreCount();
-    RCP<ParameterList> matrixparams; // parameters for the destination matrix
-    bool overrideAllreduce = false;
-    bool useKokkosPath = false;
-    if (! params.is_null ()) {
-      matrixparams = sublist (params, "CrsMatrix");
-      reverseMode = params->get ("Reverse Mode", reverseMode);
-      useKokkosPath = params->get ("TAFC: use kokkos path", useKokkosPath);
-      restrictComm = params->get ("Restrict Communicator", restrictComm);
-      auto & slist = params->sublist("matrixmatrix: kernel params",false);
-      isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
-      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-
-      overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
-      if(getComm()->getSize() < mm_optimization_core_count && isMM)   isMM = false;
-      if(reverseMode) isMM = false;
-    }
-
-   // Only used in the sparse matrix-matrix multiply (isMM) case.
-   std::shared_ptr< ::Tpetra::Details::CommRequest> iallreduceRequest;
-   int mismatch = 0;
-   int reduced_mismatch = 0;
-   if (isMM && !overrideAllreduce) {
-
-     // Test for pathological matrix transfer
-     const bool source_vals = ! getGraph ()->getImporter ().is_null();
-     const bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 ||
-                                 rowTransfer.getRemoteLIDs ().size() == 0);
-     mismatch = (source_vals != target_vals) ? 1 : 0;
-     iallreduceRequest =
-       ::Tpetra::Details::iallreduce (mismatch, reduced_mismatch,
-                                      Teuchos::REDUCE_MAX, * (getComm ()));
-   }
-
-// End transferAndFillComplete_getCallersParamters()
-
-#else // USE_TRANSFERANDFILLCOMPLETE_GETCALLERSPARAMTERS
-
    bool isMM = false;
    bool reverseMode = false;
    bool restrictComm = false;
@@ -7809,8 +7760,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
      isMM, reverseMode, restrictComm, matrixparams, useKokkosPath, iallreduceRequest,
      reduced_mismatch
      );
-
-#endif
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
