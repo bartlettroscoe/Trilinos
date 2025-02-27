@@ -7747,6 +7747,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // Get the caller's parameters
     //
 
+#define USE_TRANSFERANDFILLCOMPLETE_GETCALLERSPARAMTERS 1
+
+#if !USE_TRANSFERANDFILLCOMPLETE_GETCALLERSPARAMTERS
+
 // Begin transferAndFillComplete_getCallersParamters()
 
     bool isMM = false; // optimize for matrix-matrix ops.
@@ -7790,11 +7794,23 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 // End transferAndFillComplete_getCallersParamters()
 
+#else // USE_TRANSFERANDFILLCOMPLETE_GETCALLERSPARAMTERS
+
+   bool isMM = false;
+   bool reverseMode = false;
+   bool restrictComm = false;
+   RCP<ParameterList> matrixparams;
+   bool useKokkosPath = false;
+   std::shared_ptr< ::Tpetra::Details::CommRequest> iallreduceRequest;
+   int reduced_mismatch = 0;
+
    transferAndFillComplete_getCallersParamters(
      rowTransfer, params,
      isMM, reverseMode, restrictComm, matrixparams, useKokkosPath, iallreduceRequest,
      reduced_mismatch
      );
+
+#endif
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
