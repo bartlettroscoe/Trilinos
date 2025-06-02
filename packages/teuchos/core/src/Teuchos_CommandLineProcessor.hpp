@@ -595,6 +595,14 @@ private:
     ,std::ostream   *errout
     ) const;
 
+  // Parse and print help if help option is found
+  EParseCommandLineReturn parse_print_help(
+    int             argc
+    ,char*          argv[]
+    ,std::ostream   *errout
+    ,const std::string& help_opt
+    ) const;
+
 public: // Hidden implementation stuff that clients should never see
 
   /// \class TimeMonitorSurrogate

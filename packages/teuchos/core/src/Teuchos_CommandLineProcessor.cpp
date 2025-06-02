@@ -241,6 +241,32 @@ void CommandLineProcessor::setOption(
 }
 
 
+// Parse and print help if help option is found
+
+CommandLineProcessor::EParseCommandLineReturn
+CommandLineProcessor::parse_print_help(
+  int             argc
+  ,char*          argv[]
+  ,std::ostream   *errout
+  ,const std::string& help_opt
+  ) const
+{
+  std::string        opt_name;
+  std::string        opt_val_str;
+
+  // check for help options before any others as we modify
+  // the values afterwards
+  for( int i = 1; i < argc; ++i ) {
+    bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
+    if( gov_return && opt_name == help_opt ) {
+      if(errout) printHelpMessage( argv[0], *errout );
+      return PARSE_HELP_PRINTED;
+    }
+  }
+  return PARSE_SUCCESSFUL;
+}
+
+
 // Parse command line
 
 
@@ -259,15 +285,12 @@ CommandLineProcessor::parse(
   const std::string  pause_opt = "pause-for-debugging";
   int procRank = GlobalMPISession::getRank();
 
-  // check for help options before any others as we modify
-  // the values afterwards
-  for( int i = 1; i < argc; ++i ) {
-    bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
-    if( gov_return && opt_name == help_opt ) {
-      if(errout) printHelpMessage( argv[0], *errout );
-      return PARSE_HELP_PRINTED;
-    }
+  // Check for help options first
+  EParseCommandLineReturn help_result = parse_print_help(argc, argv, errout, help_opt);
+  if (help_result != PARSE_SUCCESSFUL) {
+    return help_result;
   }
+
   // check all other options
   for( int i = 1; i < argc; ++i ) {
     bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
