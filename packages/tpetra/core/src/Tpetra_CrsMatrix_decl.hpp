@@ -32,8 +32,10 @@
 #include "Tpetra_Details_ExecutionSpacesUser.hpp"
 #include "Teuchos_DataAccess.hpp"
 
-
 #include <memory> // std::shared_ptr
+
+// Forward declaration for iallreduce functionality
+namespace Tpetra { namespace Details { class CommRequest; } }
 
 namespace Tpetra {
 
@@ -3539,6 +3541,28 @@ public:
                              const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                              const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
+
+  private:
+    /// \brief Extract and process parameters for transferAndFillComplete
+    ///
+    /// This function extracts various parameters from the input ParameterList
+    /// and sets up the configuration for the transfer and fill complete operation.
+    /// It also handles iallreduce setup for matrix-matrix multiply operations.
+    void
+    transferAndFillComplete_getParameters (const Teuchos::RCP<Teuchos::ParameterList>& params,
+                                          const ::Tpetra::Details::Transfer<LocalOrdinal,GlobalOrdinal,Node>& rowTransfer,
+                                          bool& isMM,
+                                          bool& reverseMode, 
+                                          bool& restrictComm,
+                                          bool& useKokkosPath,
+                                          bool& overrideAllreduce,
+                                          int& mm_optimization_core_count,
+                                          Teuchos::RCP<Teuchos::ParameterList>& matrixparams,
+                                          std::shared_ptr<Tpetra::Details::CommRequest>& iallreduceRequest,
+                                          int& mismatch,
+                                          int& reduced_mismatch) const;
+
+  public:
 
     /// \brief Common implementation detail of insertGlobalValues and
     ///   insertGlobalValuesFiltered.
