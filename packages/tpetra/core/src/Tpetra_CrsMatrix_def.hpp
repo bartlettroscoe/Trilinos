@@ -9270,6 +9270,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT_TWO(SCALAR, LO, GO, NODE) \
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT_TWO(SCALAR, LO, GO, NODE)
 
+namespace Tpetra {
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -9282,6 +9284,7 @@ transferAndFillComplete_getParameters (bool& isMM,
                                        bool& useKokkosPath,
                                        const Teuchos::RCP<Teuchos::ParameterList>& params) const
 {
+  using Details::Behavior;
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::sublist;
@@ -9311,5 +9314,7 @@ transferAndFillComplete_getParameters (bool& isMM,
     if(reverseMode) isMM = false;
   }
 }
+
+} // namespace Tpetra
 
 #endif // TPETRA_CRSMATRIX_DEF_HPP
