@@ -3532,6 +3532,17 @@ public:
     ///   3. Call fillComplete on the destination matrix
     ///
     /// Fusing these tasks can avoid some communication and work.
+    /// \brief Helper method to extract parameters from the parameter list in transferAndFillComplete
+    void
+    transferAndFillComplete_getParameters (bool& isMM,
+                                          bool& reverseMode,
+                                          bool& restrictComm,
+                                          int& mm_optimization_core_count,
+                                          Teuchos::RCP<Teuchos::ParameterList>& matrixparams,
+                                          bool& overrideAllreduce,
+                                          bool& useKokkosPath,
+                                          const Teuchos::RCP<Teuchos::ParameterList>& params) const;
+
     void
     transferAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& destMatrix,
                              const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& rowTransfer,

@@ -7743,25 +7743,16 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     bool isMM = false; // optimize for matrix-matrix ops.
     bool reverseMode = false; // Are we in reverse mode?
     bool restrictComm = false; // Do we need to restrict the communicator?
-
-    int mm_optimization_core_count =
-      Behavior::TAFC_OptimizationCoreCount();
+    int mm_optimization_core_count = 0;
     RCP<ParameterList> matrixparams; // parameters for the destination matrix
     bool overrideAllreduce = false;
     bool useKokkosPath = false;
-    if (! params.is_null ()) {
-      matrixparams = sublist (params, "CrsMatrix");
-      reverseMode = params->get ("Reverse Mode", reverseMode);
-      useKokkosPath = params->get ("TAFC: use kokkos path", useKokkosPath);
-      restrictComm = params->get ("Restrict Communicator", restrictComm);
-      auto & slist = params->sublist("matrixmatrix: kernel params",false);
-      isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
-      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-
-      overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
-      if(getComm()->getSize() < mm_optimization_core_count && isMM)   isMM = false;
-      if(reverseMode) isMM = false;
-    }
+    
+    // Extract parameters using the helper function
+    transferAndFillComplete_getParameters(isMM, reverseMode, restrictComm, 
+                                          mm_optimization_core_count,
+                                          matrixparams, overrideAllreduce,
+                                          useKokkosPath, params);
 
    // Only used in the sparse matrix-matrix multiply (isMM) case.
    std::shared_ptr< ::Tpetra::Details::CommRequest> iallreduceRequest;
@@ -9278,5 +9269,52 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(SCALAR, LO, GO, NODE) \
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT_TWO(SCALAR, LO, GO, NODE) \
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT_TWO(SCALAR, LO, GO, NODE)
+
+namespace Tpetra {
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+transferAndFillComplete_getParameters (bool& isMM,
+                                       bool& reverseMode,
+                                       bool& restrictComm,
+                                       int& mm_optimization_core_count,
+                                       Teuchos::RCP<Teuchos::ParameterList>& matrixparams,
+                                       bool& overrideAllreduce,
+                                       bool& useKokkosPath,
+                                       const Teuchos::RCP<Teuchos::ParameterList>& params) const
+{
+  using Details::Behavior;
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::sublist;
+
+  // Initialize parameters with defaults
+  isMM = false; // optimize for matrix-matrix ops.
+  reverseMode = false; // Are we in reverse mode?
+  restrictComm = false; // Do we need to restrict the communicator?
+
+  mm_optimization_core_count =
+    Behavior::TAFC_OptimizationCoreCount();
+  matrixparams = Teuchos::null; // parameters for the destination matrix
+  overrideAllreduce = false;
+  useKokkosPath = false;
+
+  if (! params.is_null ()) {
+    matrixparams = sublist (params, "CrsMatrix");
+    reverseMode = params->get ("Reverse Mode", reverseMode);
+    useKokkosPath = params->get ("TAFC: use kokkos path", useKokkosPath);
+    restrictComm = params->get ("Restrict Communicator", restrictComm);
+    auto & slist = params->sublist("matrixmatrix: kernel params",false);
+    isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
+    mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+
+    overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
+    if(getComm()->getSize() < mm_optimization_core_count && isMM)   isMM = false;
+    if(reverseMode) isMM = false;
+  }
+}
+
+} // namespace Tpetra
 
 #endif // TPETRA_CRSMATRIX_DEF_HPP
