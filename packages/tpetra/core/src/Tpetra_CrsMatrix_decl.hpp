@@ -3540,6 +3540,23 @@ public:
                              const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
+  private:
+    /// \brief Extract and process parameters for transferAndFillComplete
+    ///
+    /// This function extracts various parameters from the input ParameterList
+    /// and sets up the configuration for the transfer and fill complete operation.
+    void
+    transferAndFillComplete_getParameters (const Teuchos::RCP<Teuchos::ParameterList>& params,
+                                          bool& isMM,
+                                          bool& reverseMode, 
+                                          bool& restrictComm,
+                                          bool& useKokkosPath,
+                                          bool& overrideAllreduce,
+                                          int& mm_optimization_core_count,
+                                          Teuchos::RCP<Teuchos::ParameterList>& matrixparams) const;
+
+  public:
+
     /// \brief Common implementation detail of insertGlobalValues and
     ///   insertGlobalValuesFiltered.
     ///

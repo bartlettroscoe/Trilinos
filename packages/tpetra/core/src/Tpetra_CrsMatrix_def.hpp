@@ -7695,6 +7695,45 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  transferAndFillComplete_getParameters (const Teuchos::RCP<Teuchos::ParameterList>& params,
+                                        bool& isMM,
+                                        bool& reverseMode,
+                                        bool& restrictComm,
+                                        bool& useKokkosPath,
+                                        bool& overrideAllreduce,
+                                        int& mm_optimization_core_count,
+                                        Teuchos::RCP<Teuchos::ParameterList>& matrixparams) const
+  {
+    using Details::Behavior;
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::sublist;
+    
+    // Initialize default values
+    isMM = false; // optimize for matrix-matrix ops.
+    reverseMode = false; // Are we in reverse mode?
+    restrictComm = false; // Do we need to restrict the communicator?
+    mm_optimization_core_count = Behavior::TAFC_OptimizationCoreCount();
+    overrideAllreduce = false;
+    useKokkosPath = false;
+    
+    if (! params.is_null ()) {
+      matrixparams = sublist (params, "CrsMatrix");
+      reverseMode = params->get ("Reverse Mode", reverseMode);
+      useKokkosPath = params->get ("TAFC: use kokkos path", useKokkosPath);
+      restrictComm = params->get ("Restrict Communicator", restrictComm);
+      auto & slist = params->sublist("matrixmatrix: kernel params",false);
+      isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
+      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+
+      overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
+      if(getComm()->getSize() < mm_optimization_core_count && isMM)   isMM = false;
+      if(reverseMode) isMM = false;
+    }
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -7740,28 +7779,17 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     //
     // Get the caller's parameters
     //
-    bool isMM = false; // optimize for matrix-matrix ops.
-    bool reverseMode = false; // Are we in reverse mode?
-    bool restrictComm = false; // Do we need to restrict the communicator?
-
-    int mm_optimization_core_count =
-      Behavior::TAFC_OptimizationCoreCount();
+    bool isMM; // optimize for matrix-matrix ops.
+    bool reverseMode; // Are we in reverse mode?
+    bool restrictComm; // Do we need to restrict the communicator?
+    int mm_optimization_core_count;
     RCP<ParameterList> matrixparams; // parameters for the destination matrix
-    bool overrideAllreduce = false;
-    bool useKokkosPath = false;
-    if (! params.is_null ()) {
-      matrixparams = sublist (params, "CrsMatrix");
-      reverseMode = params->get ("Reverse Mode", reverseMode);
-      useKokkosPath = params->get ("TAFC: use kokkos path", useKokkosPath);
-      restrictComm = params->get ("Restrict Communicator", restrictComm);
-      auto & slist = params->sublist("matrixmatrix: kernel params",false);
-      isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
-      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+    bool overrideAllreduce;
+    bool useKokkosPath;
 
-      overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
-      if(getComm()->getSize() < mm_optimization_core_count && isMM)   isMM = false;
-      if(reverseMode) isMM = false;
-    }
+    transferAndFillComplete_getParameters(params, isMM, reverseMode, restrictComm,
+                                        useKokkosPath, overrideAllreduce,
+                                        mm_optimization_core_count, matrixparams);
 
    // Only used in the sparse matrix-matrix multiply (isMM) case.
    std::shared_ptr< ::Tpetra::Details::CommRequest> iallreduceRequest;
@@ -9278,5 +9306,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(SCALAR, LO, GO, NODE) \
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT_TWO(SCALAR, LO, GO, NODE) \
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT_TWO(SCALAR, LO, GO, NODE)
+
+  
 
 #endif // TPETRA_CRSMATRIX_DEF_HPP
