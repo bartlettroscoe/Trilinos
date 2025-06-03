@@ -7699,13 +7699,17 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   transferAndFillComplete_getParameters (const Teuchos::RCP<Teuchos::ParameterList>& params,
+                                        const ::Tpetra::Details::Transfer<LocalOrdinal,GlobalOrdinal,Node>& rowTransfer,
                                         bool& isMM,
                                         bool& reverseMode,
                                         bool& restrictComm,
                                         bool& useKokkosPath,
                                         bool& overrideAllreduce,
                                         int& mm_optimization_core_count,
-                                        Teuchos::RCP<Teuchos::ParameterList>& matrixparams) const
+                                        Teuchos::RCP<Teuchos::ParameterList>& matrixparams,
+                                        std::shared_ptr<Tpetra::Details::CommRequest>& iallreduceRequest,
+                                        int& mismatch,
+                                        int& reduced_mismatch) const
   {
     using Details::Behavior;
     using Teuchos::ParameterList;
@@ -7732,6 +7736,22 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
       if(getComm()->getSize() < mm_optimization_core_count && isMM)   isMM = false;
       if(reverseMode) isMM = false;
+    }
+
+    // Initialize iallreduce-related variables
+    mismatch = 0;
+    reduced_mismatch = 0;
+    
+    // Handle iallreduce setup for matrix-matrix multiply operations
+    if (isMM && !overrideAllreduce) {
+      // Test for pathological matrix transfer
+      const bool source_vals = ! getGraph ()->getImporter ().is_null();
+      const bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 ||
+                                  rowTransfer.getRemoteLIDs ().size() == 0);
+      mismatch = (source_vals != target_vals) ? 1 : 0;
+      iallreduceRequest =
+        ::Tpetra::Details::iallreduce (mismatch, reduced_mismatch,
+                                       Teuchos::REDUCE_MAX, * (getComm ()));
     }
   }
 
@@ -7786,26 +7806,16 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<ParameterList> matrixparams; // parameters for the destination matrix
     bool overrideAllreduce;
     bool useKokkosPath;
+    
+    // Variables for iallreduce handling (set by transferAndFillComplete_getParameters)
+    std::shared_ptr<Tpetra::Details::CommRequest> iallreduceRequest;
+    int mismatch;
+    int reduced_mismatch;
 
-    transferAndFillComplete_getParameters(params, isMM, reverseMode, restrictComm,
+    transferAndFillComplete_getParameters(params, rowTransfer, isMM, reverseMode, restrictComm,
                                         useKokkosPath, overrideAllreduce,
-                                        mm_optimization_core_count, matrixparams);
-
-   // Only used in the sparse matrix-matrix multiply (isMM) case.
-   std::shared_ptr< ::Tpetra::Details::CommRequest> iallreduceRequest;
-   int mismatch = 0;
-   int reduced_mismatch = 0;
-   if (isMM && !overrideAllreduce) {
-
-     // Test for pathological matrix transfer
-     const bool source_vals = ! getGraph ()->getImporter ().is_null();
-     const bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 ||
-                                 rowTransfer.getRemoteLIDs ().size() == 0);
-     mismatch = (source_vals != target_vals) ? 1 : 0;
-     iallreduceRequest =
-       ::Tpetra::Details::iallreduce (mismatch, reduced_mismatch,
-                                      Teuchos::REDUCE_MAX, * (getComm ()));
-   }
+                                        mm_optimization_core_count, matrixparams,
+                                        iallreduceRequest, mismatch, reduced_mismatch);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
