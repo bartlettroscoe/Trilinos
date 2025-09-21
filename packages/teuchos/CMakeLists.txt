@@ -273,8 +273,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${Teuchos_ENABLE_THREAD_SAFE_Default}
   )
 
-
-
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_THREAD_SAFE)
 ASSERT_DEFINED(${PACKAGE_NAME}Core_ENABLE_Pthread)
 COMBINED_OPTION(
@@ -285,10 +283,6 @@ COMBINED_OPTION(
   DOCSTR
     "Enable thread safe unit tests for ${PACKAGE_NAME} Memory Management classes."
   )
-
-
-
-
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_ABC
@@ -468,6 +462,22 @@ IF (Teuchos_TIMER_KOKKOS_FENCE)
   ENDIF()
   MESSAGE(STATUS "Will call Kokkos::fence() when a Teuchos timer starts or stops.")
 ENDIF()
+
+print_var(Teuchos_ENABLE_TESTS)
+
+if (Teuchos_ENABLE_TESTS)
+  # Get GoogleTest
+  cmake_policy(SET CMP0135 NEW)
+  include(FetchContent)
+  FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+    )
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  FetchContent_MakeAvailable(googletest)
+  set_target_properties(gtest gtest_main gmock gmock_main PROPERTIES
+    TRIBITS_TESTONLY_LIB TRUE)
+endif()
 
 #
 # D) Process the subpackages for Teuchos

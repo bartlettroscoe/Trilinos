@@ -32,6 +32,19 @@ IF (${PACKAGE_NAME}_ENABLE_COMPLEX)
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SerialSymDenseMatrix_UnitTests
+  SOURCES SerialSymDenseMatrix_UnitTests.cpp
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  ARGS -v
+  ADDED_EXE_TARGET_NAME_OUT SymDenseMatrix_UnitTests_TARGET_NAME
+  )
+if (TARGET ${SymDenseMatrix_UnitTests_TARGET_NAME})
+  target_link_libraries(${SymDenseMatrix_UnitTests_TARGET_NAME}
+    PRIVATE GTest::gtest_main)
+endif()
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DenseSolver_test
   SOURCES cxx_main_solver.cpp
   NUM_MPI_PROCS 1
