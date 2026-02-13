@@ -1,6 +1,6 @@
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_OPTIONAL_PACKAGES  Kokkos
-  LIB_OPTIONAL_TPLS  BinUtils  Boost  MPI  ARPREC  QD  QT  quadmath Pthread  Valgrind
+  LIB_OPTIONAL_TPLS  BinUtils  Boost  MPI  ARPREC  QD  QT  quadmath Pthread  Valgrind gtest
   )
 
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Kokkos)
