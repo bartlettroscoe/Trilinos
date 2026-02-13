@@ -296,6 +296,9 @@ using RepartitionBlockDiagonalFactory [[maybe_unused]] = MueLu::RepartitionBlock
 #ifdef MUELU_REPARTITIONHEURISTICFACTORY_SHORT
 using RepartitionHeuristicFactory [[maybe_unused]] = MueLu::RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
+#ifdef MUELU_REPARTITIONUTILITIES_SHORT
+using RepartitionUtilities [[maybe_unused]] = MueLu::RepartitionUtilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
 #ifdef MUELU_REPLICATEPFACTORY_SHORT
 using ReplicatePFactory [[maybe_unused]] = MueLu::ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
@@ -304,9 +307,6 @@ using RigidBodyModeFactory [[maybe_unused]] = MueLu::RigidBodyModeFactory<Scalar
 #endif
 #ifdef MUELU_SAPFACTORY_SHORT
 using SaPFactory [[maybe_unused]] = MueLu::SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
-#ifdef MUELU_SAPFACTORY_KOKKOS_SHORT
-using SaPFactory_kokkos [[maybe_unused]] = MueLu::SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_SCALEDNULLSPACEFACTORY_SHORT
 using ScaledNullspaceFactory [[maybe_unused]] = MueLu::ScaledNullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;

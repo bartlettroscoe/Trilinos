@@ -225,11 +225,7 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
                                    device_type, void, size_t>;
 
   //! The type of the part of the sparse graph on each MPI process.
-#if KOKKOS_VERSION >= 40799
   using local_graph_host_type = typename local_graph_device_type::host_mirror_type;
-#else
-  using local_graph_host_type = typename local_graph_device_type::HostMirror;
-#endif
 
   //! The Map specialization used by this class.
   using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -1186,6 +1182,21 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
                                         buffer_device_type>& permuteFromLIDs,
                  const CombineMode CM) override;
 
+  void copyAndPermuteNew(
+      const row_graph_type& source,
+      row_graph_type& target,
+      const size_t numSameIDs,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+      const CombineMode CM);
+
+  void insertGlobalIndicesDevice(
+      const CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& srcCrsGraph,
+      CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& tgtCrsGraph,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+      LocalOrdinal loopEnd);
+
   using padding_type = Details::CrsPadding<
       local_ordinal_type, global_ordinal_type>;
 
@@ -1974,17 +1985,6 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   // mfh 08 May 2017: I only restore "protected" here for backwards
   // compatibility.
  protected:
-  /// \brief Sort and merge duplicate column indices in the given row.
-  ///
-  /// \pre The graph is locally indexed:
-  ///   <tt>isGloballyIndexed() == false</tt>.
-  /// \pre The graph is not already storage optimized:
-  ///   <tt>isStorageOptimized() == false</tt>
-  ///
-  /// \return The number of duplicate column indices eliminated from the row.
-  size_t sortAndMergeRowIndices(const RowInfo& rowInfo,
-                                const bool sorted,
-                                const bool merged);
   //@}
 
   /// Set the domain and range Maps, and invalidate the Import

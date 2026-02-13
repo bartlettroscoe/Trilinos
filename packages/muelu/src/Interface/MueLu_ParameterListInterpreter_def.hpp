@@ -705,9 +705,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                    FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
   MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
   MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
-  bool useMaxAbsDiagonalScaling = false;
-  if (defaultList.isParameter("sa: use rowsumabs diagonal scaling"))
-    useMaxAbsDiagonalScaling = defaultList.get<bool>("sa: use rowsumabs diagonal scaling");
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use rowsumabs diagonal scaling", bool, useMaxAbsDiagonalScaling);
 
   // === Smoothing ===
   // FIXME: should custom smoother check default list too?
@@ -755,6 +753,21 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     std::string preSmootherType, postSmootherType;
     ParameterList preSmootherParams, postSmootherParams;
 
+    auto setChebyshevSettings = [&](const std::string& smootherType, Teuchos::ParameterList& smootherParams) {
+      auto upperCaseSmootherType = smootherType;
+      std::transform(smootherType.begin(), smootherType.end(), upperCaseSmootherType.begin(), ::toupper);
+      if (upperCaseSmootherType != "CHEBYSHEV") return;
+
+      if (smootherParams.isParameter("chebyshev: use rowsumabs diagonal scaling")) {
+        bool useMaxAbsDiagonalScalingCheby = smootherParams.get<bool>("chebyshev: use rowsumabs diagonal scaling");
+        TEUCHOS_TEST_FOR_EXCEPTION(useMaxAbsDiagonalScaling != useMaxAbsDiagonalScalingCheby,
+                                   Exceptions::RuntimeError, "'chebyshev: use rowsumabs diagonal scaling' (" << std::boolalpha << useMaxAbsDiagonalScalingCheby << ") must match 'sa: use rowsumabs diagonal scaling' (" << std::boolalpha << useMaxAbsDiagonalScaling << ")\n");
+      } else {
+        if (useMaxAbsDiagonalScaling)
+          smootherParams.set("chebyshev: use rowsumabs diagonal scaling", useMaxAbsDiagonalScaling);
+      }
+    };
+
     if (paramList.isParameter("smoother: overlap"))
       overlap = paramList.get<int>("smoother: overlap");
 
@@ -777,8 +790,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       else if (preSmootherType == "RELAXATION")
         preSmootherParams = defaultSmootherParams;
 
-      if (preSmootherType == "CHEBYSHEV" && useMaxAbsDiagonalScaling)
-        preSmootherParams.set("chebyshev: use rowsumabs diagonal scaling", true);
+      setChebyshevSettings(preSmootherType, preSmootherParams);
 
 #ifdef HAVE_MUELU_INTREPID2
       // Propagate P-coarsening for Topo smoothing
@@ -824,8 +836,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       if (paramList.isParameter("smoother: post overlap"))
         overlap = paramList.get<int>("smoother: post overlap");
 
-      if (postSmootherType == "CHEBYSHEV" && useMaxAbsDiagonalScaling)
-        postSmootherParams.set("chebyshev: use rowsumabs diagonal scaling", true);
+      setChebyshevSettings(postSmootherType, postSmootherParams);
 
       if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
         postSmoother = preSmoother;
@@ -1058,7 +1069,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold", double, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: greedy Dirichlet", bool, dropParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian metric", std::string, dropParams);
+    if (useKokkos_)
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian metric", std::string, dropParams);
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: classical algo", std::string, dropParams);
@@ -1141,7 +1153,6 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   if (aggType == "uncoupled") {
     aggFactory = rcp(new UncoupledAggregationFactory());
     ParameterList aggParams;
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: mode", std::string, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: ordering", std::string, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: min agg size", int, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: max agg size", int, aggParams);
@@ -1969,7 +1980,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     manager.SetFactory("Nullspace", togglePFactory);
   }
 
-  if (paramList.isParameter("semicoarsen: number of levels")) {
+  if (paramList.isParameter("semicoarsen: number of levels") &&
+      paramList.get<int>("semicoarsen: number of levels") > 0) {
     auto tf = rcp(new ToggleCoordinatesTransferFactory());
     tf->SetFactory("Chosen P", manager.GetFactory("P"));
     tf->AddCoordTransferFactory(semicoarsenFactory);
@@ -2055,7 +2067,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: rowsumabs diagonal replacement value", double, Pparams);
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: rowsumabs use automatic diagonal tolerance", bool, Pparams);
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: enforce constraints", bool, Pparams);
-  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: eigen-analysis type", std::string, Pparams);
+  // MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: eigen-analysis type", std::string, Pparams);
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, Pparams);
 
   P->SetParameterList(Pparams);
@@ -2076,7 +2088,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use root stencil", bool, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: Dirichlet threshold", double, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use spread lumping", bool, fParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: lumping choice", std::string, fParams);
+      // MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: lumping choice", std::string, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: count negative diagonals", bool, fParams);

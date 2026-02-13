@@ -5,6 +5,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
+#include <stk_mesh/baseImpl/EntityCommHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/baseImpl/EntityKeyMapping.hpp>
 #include <stk_mesh/base/EntityLess.hpp>
@@ -17,8 +18,13 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-bool MeshModification::modification_begin(const std::string /*description*/, bool resetSymGhostInfo)
+bool MeshModification::modification_begin(const std::string /*description*/, bool resetSymGhostInfo, bool isSyncToHost)
 {
+    if (isSyncToHost)
+    {
+      STK_ThrowRequireMsg(!this->in_modifiable_state(), "Cannot syncToHost inside an existing mod cycle");
+    }
+
     if (m_bulkData.m_runConsistencyCheck) {
       parallel_machine_barrier( m_bulkData.parallel() );
     }
@@ -56,12 +62,15 @@ bool MeshModification::modification_begin(const std::string /*description*/, boo
       m_bulkData.remove_symmetric_ghost_info();
     }
 
-    const stk::mesh::FieldVector allFields = m_bulkData.mesh_meta_data().get_fields();
-    for (FieldBase * stkField : allFields) {
-      stkField->sync_to_host();
-    }
+    if (!isSyncToHost)
+    {
+      const stk::mesh::FieldVector allFields = m_bulkData.mesh_meta_data().get_fields();
+      for (FieldBase * stkField : allFields) {
+        stkField->sync_to_host();
+      }
 
-    this->increment_sync_count();
+      this->increment_sync_count();
+    }
     return true;
 }
 

@@ -13,6 +13,10 @@
 /// \file Tpetra_CrsGraph_def.hpp
 /// \brief Definition of the Tpetra::CrsGraph class
 
+#ifdef KOKKOS_ENABLE_SYCL
+#include <sycl/sycl.hpp>
+#endif
+
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
@@ -890,6 +894,8 @@ CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   const char tfecfFuncName[] = "getLocalNumEntries: ";
   typedef LocalOrdinal LO;
 
+  Details::ProfilingRegion regionGLNE("Tpetra::CrsGraph::getLocalNumEntries");
+
   if (this->indicesAreAllocated_) {
     const LO lclNumRows = this->getLocalNumRows();
     if (lclNumRows == 0) {
@@ -1072,7 +1078,6 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
     allocateIndices(const ELocalGlobal lg, const bool verbose) {
-  using Details::ProfilingRegion;
   using std::endl;
   using Teuchos::arcp;
   using Teuchos::Array;
@@ -1083,7 +1088,8 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   const char tfecfFuncName[] = "allocateIndices: ";
   const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
-  ProfilingRegion profRegion("Tpetra::CrsGraph::allocateIndices");
+
+  Details::ProfilingRegion profRegion("Tpetra::CrsGraph::allocateIndices");
 
   std::unique_ptr<std::string> prefix;
   if (verbose) {
@@ -1561,8 +1567,9 @@ CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   using Kokkos::subview;
   using Kokkos::View;
   using Teuchos::ArrayView;
-  using LO                   = LocalOrdinal;
-  using GO                   = GlobalOrdinal;
+  using LO = LocalOrdinal;
+  using GO = GlobalOrdinal;
+
   const char tfecfFuncName[] = "insertGlobalIndicesImpl: ";
   const LO lclRow            = static_cast<LO>(rowInfo.localRow);
 
@@ -1625,7 +1632,8 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   using Kokkos::MemoryUnmanaged;
   using Kokkos::subview;
   using Kokkos::View;
-  using LO                   = LocalOrdinal;
+  using LO = LocalOrdinal;
+
   const char tfecfFuncName[] = "insertLocallIndicesImpl: ";
 
   const RowInfo rowInfo = this->getRowInfo(myRow);
@@ -1685,6 +1693,7 @@ CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   using GO = GlobalOrdinal;
   using Kokkos::MemoryUnmanaged;
   using Kokkos::View;
+
   auto invalidCount = Teuchos::OrdinalTraits<size_t>::invalid();
 
   using inp_view_type = View<const GO*, Kokkos::HostSpace, MemoryUnmanaged>;
@@ -1697,48 +1706,26 @@ CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
       return invalidCount;
     const auto& colMap = *(this->colMap_);
     auto map           = [&](GO const gblInd) { return colMap.getLocalElement(gblInd); };
-    numFound           = Details::findCrsIndices(lclRow, this->getRowPtrsUnpackedHost(),
-                                                 rowInfo.numEntries,
-                                                 lclIndsUnpacked_wdv.getHostView(Access::ReadOnly), inputInds, map, fun);
+    if (this->isSorted()) {
+      numFound = Details::findCrsIndicesSorted(
+          lclRow,
+          this->getRowPtrsUnpackedHost(),
+          rowInfo.numEntries,
+          lclIndsUnpacked_wdv.getHostView(Access::ReadOnly),
+          inputInds,
+          map,
+          fun);
+    } else {
+      numFound = Details::findCrsIndices(lclRow, this->getRowPtrsUnpackedHost(),
+                                         rowInfo.numEntries,
+                                         lclIndsUnpacked_wdv.getHostView(Access::ReadOnly), inputInds, map, fun);
+    }
   } else if (this->isGloballyIndexed()) {
     numFound = Details::findCrsIndices(lclRow, this->getRowPtrsUnpackedHost(),
                                        rowInfo.numEntries,
                                        gblInds_wdv.getHostView(Access::ReadOnly), inputInds, fun);
   }
   return numFound;
-}
-
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-size_t
-CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-    sortAndMergeRowIndices(const RowInfo& rowInfo,
-                           const bool sorted,
-                           const bool merged) {
-  const size_t origNumEnt = rowInfo.numEntries;
-  if (origNumEnt != Tpetra::Details::OrdinalTraits<size_t>::invalid() &&
-      origNumEnt != 0) {
-    auto lclColInds = this->getLocalIndsViewHostNonConst(rowInfo);
-
-    LocalOrdinal* const lclColIndsRaw = lclColInds.data();
-    if (!sorted) {
-      std::sort(lclColIndsRaw, lclColIndsRaw + origNumEnt);
-    }
-
-    if (!merged) {
-      LocalOrdinal* const beg    = lclColIndsRaw;
-      LocalOrdinal* const end    = beg + rowInfo.numEntries;
-      LocalOrdinal* const newend = std::unique(beg, end);
-      const size_t newNumEnt     = newend - beg;
-
-      // NOTE (mfh 08 May 2017) This is a host View, so it does not assume UVM.
-      this->k_numRowEntries_(rowInfo.localRow) = newNumEnt;
-      return origNumEnt - newNumEnt;  // the number of duplicates in the row
-    } else {
-      return static_cast<size_t>(0);  // assume no duplicates
-    }
-  } else {
-    return static_cast<size_t>(0);  // no entries in the row
-  }
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2152,14 +2139,14 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid()) {
     if (isLocallyIndexed()) {
       auto lclInds = getLocalIndsViewHost(rowinfo);
-      for (size_t j = 0; j < theNumEntries; ++j) {
-        indices[j] = colMap_->getGlobalElement(lclInds(j));
-      }
+      bool err     = colMap_->getGlobalElements(lclInds.data(), theNumEntries, indices.data());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(err, std::runtime_error, "getGlobalElements error");
     } else if (isGloballyIndexed()) {
       auto gblInds = getGlobalIndsViewHost(rowinfo);
-      for (size_t j = 0; j < theNumEntries; ++j) {
-        indices[j] = gblInds(j);
-      }
+      std::memcpy(
+          (void*)indices.data(),
+          (const void*)gblInds.data(),
+          theNumEntries * sizeof(*indices.data()));
     }
   }
 }
@@ -2663,11 +2650,14 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   using Teuchos::REDUCE_MAX;
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
-  using crs_graph_type       = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
-  using LO                   = local_ordinal_type;
-  using GO                   = global_ordinal_type;
-  using size_type            = typename Teuchos::Array<GO>::size_type;
+  using crs_graph_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+  using LO             = local_ordinal_type;
+  using GO             = global_ordinal_type;
+  using size_type      = typename Teuchos::Array<GO>::size_type;
+
   const char tfecfFuncName[] = "globalAssemble: ";  // for exception macro
+
+  Details::ProfilingRegion regionGA("Tpetra::CrsGraph::globalAssemble");
 
   std::unique_ptr<std::string> prefix;
   if (verbose_) {
@@ -2906,8 +2896,11 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
                  const Teuchos::RCP<const map_type>& rangeMap,
                  const Teuchos::RCP<Teuchos::ParameterList>& params) {
   using std::endl;
+
   const char tfecfFuncName[] = "fillComplete: ";
   const bool verbose         = verbose_;
+
+  Details::ProfilingRegion regionFC("Tpetra::CrsGraph::fillComplete");
 
   std::unique_ptr<std::string> prefix;
   if (verbose) {
@@ -3254,6 +3247,8 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
       "fillLocalGraph (called from fillComplete or "
       "expertStaticFillComplete): ";
   const size_t lclNumRows = this->getLocalNumRows();
+
+  Details::ProfilingRegion regionFLG("Tpetra::CrsGraph::fillLocalGraph");
 
   // This method's goal is to fill in the two arrays (compressed
   // sparse row format) that define the sparse graph's structure.
@@ -4176,15 +4171,54 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   }
 }
 
+template <class execution_space, class LO, class rowptr_type, class colinds_type, class numRowEntries_type>
+void prepareSortMergeUnpackedGraph(rowptr_type rowptr, colinds_type colinds, numRowEntries_type numRowEntries) {
+  using ATS         = KokkosKernels::ArithTraits<LO>;
+  const auto unused = ATS::max();
+
+  auto numRows = rowptr.extent(0) - 1;
+
+  // make sure that unused entries will get ordered last
+  Kokkos::parallel_for(
+      "flag_unused_entries", Kokkos::RangePolicy<execution_space, LO>(0, numRows), KOKKOS_LAMBDA(const LO rlid) {
+        for (size_t jj = rowptr(rlid) + numRowEntries(rlid); jj < rowptr(rlid + 1); ++jj) {
+          colinds(jj) = unused;
+        }
+      });
+}
+
+template <class execution_space, class LO, class rowptr_type, class colinds_type, class numRowEntries_type>
+void mergeUnpackedGraph(rowptr_type rowptr, colinds_type colinds, numRowEntries_type numRowEntries) {
+  // For this to work correctly, we require that the unsused column entries have been filled
+  // with indices that get ordered last.
+
+  auto numRows = rowptr.extent(0) - 1;
+
+  // merge
+  // We cannot use KokkosSparse::sort_and_merge_matrix since we
+  // do not actually want to change the allocations.
+
+  Kokkos::parallel_for(
+      "merge_entries", Kokkos::RangePolicy<execution_space>(0, numRows), KOKKOS_LAMBDA(const LO rlid) {
+        auto rowNNZ = numRowEntries(rlid);
+        if (rowNNZ == 0) {
+          return;
+        }
+        auto rowBegin = rowptr(rlid);
+        auto pos      = rowBegin;
+        for (size_t offset = rowBegin + 1; offset < rowBegin + rowNNZ; ++offset) {
+          if ((colinds(offset) != colinds(pos))) {
+            colinds(++pos) = colinds(offset);
+          }
+        }
+        numRowEntries(rlid) = pos + 1 - rowBegin;
+      });
+}
+
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
     sortAndMergeAllIndices(const bool sorted, const bool merged) {
   using std::endl;
-  using LO = LocalOrdinal;
-  using host_execution_space =
-      typename Kokkos::View<LO*, device_type>::host_mirror_type::
-          execution_space;
-  using range_type           = Kokkos::RangePolicy<host_execution_space, LO>;
   const char tfecfFuncName[] = "sortAndMergeAllIndices";
   Details::ProfilingRegion regionSortAndMerge("Tpetra::CrsGraph::sortAndMergeAllIndices");
 
@@ -4205,40 +4239,39 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
                                         "Please report this bug to the Tpetra developers.");
 
   if (!sorted || !merged) {
-    const LO lclNumRows(this->getLocalNumRows());
-    auto range = range_type(0, lclNumRows);
+    if (storageStatus_ == Details::STORAGE_1D_UNPACKED) {
+      // We are sorting & merging the unpacked views.
+      // This means that not all entries are actually in use. We need to take k_numRowEntries_ into account.
+      auto rowptr  = rowPtrsUnpacked_dev_;
+      auto colinds = lclIndsUnpacked_wdv.getDeviceView(Access::ReadWrite);
 
-    if (verbose_) {
-      size_t totalNumDups = 0;
-      // Sync and mark-modified the local indices before disabling WDV tracking
-      lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
-      Details::disableWDVTracking();
-      Kokkos::parallel_reduce(
-          range,
-          [this, sorted, merged](const LO lclRow, size_t& numDups) {
-            const RowInfo rowInfo = this->getRowInfo(lclRow);
-            numDups += this->sortAndMergeRowIndices(rowInfo, sorted, merged);
-          },
-          totalNumDups);
-      Details::enableWDVTracking();
-      std::ostringstream os;
-      os << *prefix << "totalNumDups=" << totalNumDups << endl;
-      std::cerr << os.str();
+      // Create a device copy of k_numRowEntries_.
+      auto k_numRowEntries_d = Kokkos::create_mirror_view_and_copy(execution_space(), k_numRowEntries_);
+
+      // set set unused column entries so they get sorted last
+      prepareSortMergeUnpackedGraph<execution_space, LocalOrdinal>(rowptr, colinds, k_numRowEntries_d);
+
+      if (!sorted) {
+        KokkosSparse::sort_crs_graph(rowptr, colinds);
+        this->indicesAreSorted_ = true;  // we just sorted every row
+      }
+      if (!merged) {
+        mergeUnpackedGraph<execution_space, LocalOrdinal>(rowptr, colinds, k_numRowEntries_d);
+        Kokkos::deep_copy(k_numRowEntries_, k_numRowEntries_d);
+        this->noRedundancies_ = true;  // we just merged every row
+      }
     } else {
-      // make sure that host rowptrs have been created before we enter the parallel region
-      (void)this->getRowPtrsUnpackedHost();
-      // Sync and mark-modified the local indices before disabling WDV tracking
-      lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
-      Details::disableWDVTracking();
-      Kokkos::parallel_for(range,
-                           [this, sorted, merged](const LO lclRow) {
-                             const RowInfo rowInfo = this->getRowInfo(lclRow);
-                             this->sortAndMergeRowIndices(rowInfo, sorted, merged);
-                           });
-      Details::enableWDVTracking();
+      auto rowptr  = rowPtrsPacked_dev_;
+      auto colinds = lclIndsPacked_wdv.getDeviceView(Access::ReadWrite);
+      if (!sorted && merged) {
+        KokkosSparse::sort_crs_graph(rowptr, colinds);
+        this->indicesAreSorted_ = true;  // we just sorted every row
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error,
+                                              "We should never get here."
+                                              "Please report this bug to the Tpetra developers.");
+      }
     }
-    this->indicesAreSorted_ = true;  // we just sorted every row
-    this->noRedundancies_   = true;  // we just merged every row
   }
 
   if (verbose_) {
@@ -4471,6 +4504,14 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   using this_CRS_type        = CrsGraph<LO, GO, node_type>;
   const char tfecfFuncName[] = "copyAndPermute: ";
   const bool verbose         = verbose_;
+
+  if (Details::Behavior::useNewCopyAndPermute()) {
+    const row_graph_type& srcRowGraph = dynamic_cast<const row_graph_type&>(source);
+    copyAndPermuteNew(srcRowGraph, *this, numSameIDs, permuteToLIDs, permuteFromLIDs, INSERT);
+    return;
+  }
+
+  Details::ProfilingRegion regionCAP("Tpetra::CrsGraph::copyAndPermute");
 
   std::unique_ptr<std::string> prefix;
   if (verbose) {
@@ -7113,6 +7154,243 @@ bool CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   //       exporter_  isa Teuchos::RCP<const export_type>
 
   return output;
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertGlobalIndicesDevice(
+    const CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& srcCrsGraph,
+    CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& tgtCrsGraph,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+    LocalOrdinal loopEnd) {
+  using crs_graph_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+  using LO             = LocalOrdinal;
+  using GO             = GlobalOrdinal;
+  typedef typename crs_graph_type::global_inds_device_view_type::non_const_value_type global_inds_device_value_t;
+  typedef typename Node::execution_space exec_space;
+  typedef Kokkos::RangePolicy<exec_space, LO> range_type;
+
+  const LocalOrdinal LINV  = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
+  const GlobalOrdinal GINV = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+
+  using local_map_type          = typename crs_graph_type::map_type::local_map_type;
+  local_map_type srcRowMapLocal = srcCrsGraph.getRowMap()->getLocalMap();
+  local_map_type srcColMapLocal = srcCrsGraph.getColMap()->getLocalMap();
+  local_map_type tgtRowMapLocal = tgtCrsGraph.getRowMap()->getLocalMap();
+
+  auto tgtLocalRowPtrsDevice = tgtCrsGraph.getRowPtrsUnpackedDevice();
+  auto tgtGlobalColInds      = tgtCrsGraph.gblInds_wdv.getDeviceView(Access::ReadWrite);
+  auto srcLocalRowPtrsDevice = srcCrsGraph.getLocalRowPtrsDevice();
+  auto srcLocalColIndsDevice = srcCrsGraph.lclIndsUnpacked_wdv.getDeviceView(Access::ReadOnly);
+
+  typename crs_graph_type::num_row_entries_type::non_const_type h_numRowEnt = tgtCrsGraph.k_numRowEntries_;
+
+  auto k_numRowEnt = Kokkos::create_mirror_view_and_copy(device_type(), h_numRowEnt);
+
+  const bool sorted = false;
+
+  bool hasMap            = permuteFromLIDs.extent(0) > 0;
+  auto permuteToLIDs_d   = permuteToLIDs.view_device();
+  auto permuteFromLIDs_d = permuteFromLIDs.view_device();
+
+#ifdef CRSGRAPH_INNER_ABORT
+#undef CRSGRAPH_INNER_ABORT
+#endif
+
+#ifdef KOKKOS_ENABLE_SYCL
+#define CRSGRAPH_INNER_ABORT(lin)                                                      \
+  do {                                                                                 \
+    sycl::ext::oneapi::experimental::printf("ERROR: Tpetra_CrsGraph_def.hpp:%d", lin); \
+    Kokkos::abort("error");                                                            \
+  } while (0)
+#else
+#define CRSGRAPH_INNER_ABORT(lin)                     \
+  do {                                                \
+    printf("ERROR: Tpetra_CrsGraph_def.hpp:%d", lin); \
+    Kokkos::abort("error");                           \
+  } while (0)
+#endif
+
+  Kokkos::parallel_for(
+      "Tpetra_CrsGraph::copyAndPermuteNew",
+      range_type(0, loopEnd),
+      KOKKOS_LAMBDA(const LO sourceLID) {
+        auto srcLid = sourceLID;
+        auto tgtLid = sourceLID;
+        if (hasMap) {
+          srcLid = permuteFromLIDs_d(srcLid);
+          tgtLid = permuteToLIDs_d(tgtLid);
+        }
+        auto srcGid = srcRowMapLocal.getGlobalElement(srcLid);
+        if (srcGid == GINV) CRSGRAPH_INNER_ABORT(__LINE__);
+        auto tgtGid      = tgtRowMapLocal.getGlobalElement(tgtLid);
+        auto tgtLocalRow = tgtRowMapLocal.getLocalElement(tgtGid);
+        if (tgtLocalRow == LINV) CRSGRAPH_INNER_ABORT(__LINE__);
+        if (tgtLocalRow != tgtLid) CRSGRAPH_INNER_ABORT(__LINE__);
+        auto tgtNumEntries = k_numRowEnt(tgtLocalRow);
+
+        // FIXME no auto use
+        auto start     = srcLocalRowPtrsDevice(srcLid);
+        auto end       = srcLocalRowPtrsDevice(srcLid + 1);
+        auto rowLength = (end - start);
+
+        auto tstart = tgtLocalRowPtrsDevice(tgtLocalRow);
+        auto tend   = tstart + tgtNumEntries;
+        auto tend1  = tgtLocalRowPtrsDevice(tgtLocalRow + 1);
+
+        const size_t num_avail = (tend1 < tend) ? size_t(0) : tend1 - tend;
+        size_t num_inserted    = 0;
+
+        global_inds_device_value_t* tgtGlobalColIndsPtr = tgtGlobalColInds.data();
+
+        size_t hint = 0;
+        for (size_t j = 0; j < rowLength; j++) {
+          auto ci = srcLocalColIndsDevice(start + j);
+          GO gi   = srcColMapLocal.getGlobalElement(ci);
+          if (gi == GINV) CRSGRAPH_INNER_ABORT(__LINE__);
+          auto numInTgtRow = (tend - tstart);
+
+          const size_t offset = KokkosSparse::findRelOffset(
+              tgtGlobalColIndsPtr + tstart, numInTgtRow, gi, hint, sorted);
+
+          if (offset == numInTgtRow) {
+            if (num_inserted >= num_avail) {  // not enough room
+              Kokkos::abort("num_avail");
+            }
+            tgtGlobalColIndsPtr[tstart + offset] = gi;
+            ++tend;
+            hint = offset + 1;
+            ++num_inserted;
+          }
+        }
+        k_numRowEnt(tgtLocalRow) += num_inserted;
+        return size_t(0);
+      });
+  Kokkos::deep_copy(tgtCrsGraph.k_numRowEntries_, k_numRowEnt);
+  tgtCrsGraph.setLocallyModified();
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::copyAndPermuteNew(
+    const row_graph_type& srcRowGraph,
+    row_graph_type& tgtRowGraph,
+    const size_t numSameIDs,
+    const Kokkos::DualView<const local_ordinal_type*,
+                           buffer_device_type>& permuteToLIDs,
+    const Kokkos::DualView<const local_ordinal_type*,
+                           buffer_device_type>& permuteFromLIDs,
+    const CombineMode CM) {
+  using std::endl;
+  using LO                   = local_ordinal_type;
+  using GO                   = global_ordinal_type;
+  const char tfecfFuncName[] = "copyAndPermuteNew: ";
+  const bool verbose         = verbose_;
+
+  Details::ProfilingRegion regionCAP("Tpetra::CrsGraph::copyAndPermuteNew");
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    prefix = this->createPrefix("CrsGraph", "copyAndPermuteNew");
+    std::ostringstream os;
+    os << *prefix << endl;
+    std::cerr << os.str();
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      permuteToLIDs.extent(0) != permuteFromLIDs.extent(0),
+      std::runtime_error,
+      "permuteToLIDs.extent(0) = " << permuteToLIDs.extent(0) << " != permuteFromLIDs.extent(0) = " << permuteFromLIDs.extent(0) << ".");
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Compute padding" << endl;
+    std::cerr << os.str();
+  }
+
+  using crs_graph_type                 = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+  const crs_graph_type* srcCrsGraphPtr = dynamic_cast<const crs_graph_type*>(&srcRowGraph);
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      !srcCrsGraphPtr, std::runtime_error, "error srcGraph type= " << typeid(srcRowGraph).name());
+  const crs_graph_type& srcCrsGraph = *srcCrsGraphPtr;
+
+  crs_graph_type* tgtCrsGraphPtr = dynamic_cast<crs_graph_type*>(&tgtRowGraph);
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      !tgtCrsGraphPtr, std::runtime_error, "error tgtGraph type= " << typeid(tgtRowGraph).name());
+
+  crs_graph_type& tgtCrsGraph = *tgtCrsGraphPtr;
+  auto padding                = tgtCrsGraph.computeCrsPadding(
+                     srcRowGraph, numSameIDs, permuteToLIDs, permuteFromLIDs, verbose);
+  tgtCrsGraph.applyCrsPadding(*padding, verbose);
+
+  const map_type& srcRowMap = *(srcRowGraph.getRowMap());
+  const map_type& tgtRowMap = *(tgtRowGraph.getRowMap());
+  const bool src_filled     = srcRowGraph.isFillComplete();
+  nonconst_global_inds_host_view_type row_copy;
+  LO myid = 0;
+
+  //
+  // "Copy" part of "copy and permute."
+  //
+  LO numSameIDs_as_LID = static_cast<LO>(numSameIDs);
+
+  if (src_filled || srcCrsGraphPtr == nullptr) {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "src_filled || srcCrsGraph == nullptr" << endl;
+      std::cerr << os.str();
+    }
+    // If the source graph is fill complete, we can't use view mode,
+    // because the data might be stored in a different format not
+    // compatible with the expectations of view mode.  Also, if the
+    // source graph is not a CrsGraph, we can't use view mode,
+    // because RowGraph only provides copy mode access to the data.
+    Kokkos::DualView<const local_ordinal_type*, buffer_device_type> noPermute;
+    insertGlobalIndicesDevice(srcCrsGraph, tgtCrsGraph,
+                              noPermute, noPermute,
+                              numSameIDs_as_LID);
+  } else {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "! src_filled && srcCrsGraph != nullptr" << endl;
+      std::cerr << os.str();
+    }
+    for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
+      const GO gid = srcRowMap.getGlobalElement(myid);
+      global_inds_host_view_type row;
+      srcCrsGraph.getGlobalRowView(gid, row);
+      tgtCrsGraph.insertGlobalIndices(gid, row.extent(0), row.data());
+    }
+  }
+
+  //
+  // "Permute" part of "copy and permute."
+  //
+  auto permuteToLIDs_h   = permuteToLIDs.view_host();
+  auto permuteFromLIDs_h = permuteFromLIDs.view_host();
+  auto permuteToLIDs_d   = permuteToLIDs.view_device();
+  auto permuteFromLIDs_d = permuteFromLIDs.view_device();
+
+  if (src_filled || srcCrsGraphPtr == nullptr) {
+    insertGlobalIndicesDevice(
+        srcCrsGraph,
+        tgtCrsGraph,
+        permuteToLIDs,
+        permuteFromLIDs,  // note reversed arg order, tgt, then src
+        static_cast<LO>(permuteToLIDs_h.extent(0)));
+  } else {
+    for (LO i = 0; i < static_cast<LO>(permuteToLIDs_h.extent(0)); ++i) {
+      const GO mygid  = tgtRowMap.getGlobalElement(permuteToLIDs_h[i]);
+      const GO srcgid = srcRowMap.getGlobalElement(permuteFromLIDs_h[i]);
+      global_inds_host_view_type row;
+      srcCrsGraph.getGlobalRowView(srcgid, row);
+      tgtCrsGraph.insertGlobalIndices(mygid, row.extent(0), row.data());
+    }
+  }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str();
+  }
 }
 
 }  // namespace Tpetra

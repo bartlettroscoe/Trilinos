@@ -35,6 +35,7 @@
 #ifndef STK_MESH_BASE_FIELDBLAS_HPP
 #define STK_MESH_BASE_FIELDBLAS_HPP
 
+#include <stk_util/stk_config.h>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Selector.hpp>
@@ -49,11 +50,6 @@
 #include <string>
 #include <algorithm>
 #include <type_traits>
-
-#if defined(_OPENMP)
-#include <omp.h>
-#define STK_USE_OPENMP  // Guard our pragmas to avoid unknown-pragma warnings-as-errors
-#endif
 
 namespace stk {
 namespace mesh {
@@ -207,6 +203,51 @@ struct FieldBlasImpl
         for (stk::mesh::EntityIdx entity : bucket.entities()) {
           for (stk::mesh::ScalarIdx scalar : yValues.scalars()) {
             yValues(entity, scalar) = beta * yValues(entity, scalar) + alpha * xValues(entity, scalar);
+          }
+        }
+      }
+    }
+  }
+
+
+  template <typename XDATA, typename YDATA, typename ZDATA>
+  inline static void axpbyz(const BucketVector& buckets, T alpha, const XDATA& xData, T beta, const YDATA& yData, const ZDATA& zData)
+  {
+    if constexpr (is_layout_right<XDATA, YDATA, ZDATA>()) {
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+        auto yValues = yData.bucket_values(bucket);
+        auto zValues = zData.bucket_values(bucket);
+        check_matching_extents("field_axpbyz()", xValues, yValues);
+
+        const int numValues = xValues.num_entities() * xValues.num_scalars();
+        const T* xPtr = xValues.pointer();
+        const T* yPtr = yValues.pointer();
+        T* zPtr = zValues.pointer();
+
+        for (int i = 0; i < numValues; ++i) {
+          zPtr[i] = beta * yPtr[i] + alpha * xPtr[i];
+        }
+      }
+    }
+    else {  // Layout::Left or mixed-layout cases
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+        auto yValues = yData.bucket_values(bucket);
+        auto zValues = zData.bucket_values(bucket);
+        check_matching_extents("field_axpbyz()", xValues, yValues);
+
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : yValues.scalars()) {
+            zValues(entity, scalar) = beta * yValues(entity, scalar) + alpha * xValues(entity, scalar);
           }
         }
       }
@@ -524,6 +565,22 @@ struct FieldBlasImpl
             xValues(entity, scalar) = alpha;
           }
         }
+      }
+    }
+  }
+
+  template <typename XDATA>
+  inline static void fill(const BucketVector& buckets, T alpha, const XDATA& xData, int component)
+  {
+#ifdef STK_USE_OPENMP
+    #pragma omp parallel for schedule(static)
+#endif
+    for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+      const Bucket& bucket = *buckets[bucketIndex];
+      auto xValues = xData.bucket_values(bucket);
+
+      for (stk::mesh::EntityIdx entity : bucket.entities()) {
+        xValues(entity, stk::mesh::ScalarIdx(component)) = alpha;
       }
     }
   }
@@ -1031,30 +1088,11 @@ void field_axpy(T alpha, const FieldBase& xField, const FieldBase& yField, const
 
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
-  if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
-  }
-  else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
-  }
-  else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
-  }
-  else if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
-  }
-  else {
-    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_axpy().  xField layout: "
-                      << xField.host_data_layout() << " and yField layout: " << yField.host_data_layout());
-  }
+  field_data_execute<T, T, ReadOnly, ReadWrite>(xField,
+                                                yField,
+                                                [&buckets, alpha](auto& xData, auto& yData) {
+                                                  FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
+                                                });
 }
 
 template <typename T>
@@ -1079,56 +1117,18 @@ void field_axpby(T alpha, const FieldBase& xField, T beta, const FieldBase& yFie
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
   if ( beta == T(1) ) {
-    if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Right) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
-    }
-    else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Left) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
-    }
-    else if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Left) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
-    }
-    else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Right) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
-    }
-    else {
-      STK_ThrowErrorMsg("Unsupported Field data layout detected in field_axpby().  xField layout: "
-                        << xField.host_data_layout() << " and yField layout: " << yField.host_data_layout());
-    }
+    field_data_execute<T, T, ReadOnly, ReadWrite>(xField,
+                                                  yField,
+                                                  [&buckets, alpha](auto& xData, auto& yData) {
+                                                    FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
+                                                  });
   }
   else {
-    if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Right) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
-    }
-    else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Left) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
-    }
-    else if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Left) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
-    }
-    else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Right) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
-    }
-    else {
-      STK_ThrowErrorMsg("Unsupported Field data layout detected in field_axpby().  xField layout: "
-                        << xField.host_data_layout() << " and yField layout: " << yField.host_data_layout());
-    }
+    field_data_execute<T, T, ReadOnly, ReadWrite>(xField,
+                                                  yField,
+                                                  [&buckets, alpha, beta](auto& xData, auto& yData) {
+                                                    FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
+                                                  });
   }
 }
 
@@ -1140,6 +1140,34 @@ void field_axpby(T alpha, const FieldBase& xField, T beta, const FieldBase& yFie
   field_axpby(alpha, xField, beta, yField, selector);
 }
 
+//==============================================================================
+// axpbyz: z[i] = a*x[i] + b*y[i]
+//
+template <typename T>
+inline
+void field_axpbyz(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const FieldBase& zField, const Selector& selector)
+{
+  STK_ThrowRequire(is_compatible<T>(xField));
+  STK_ThrowRequire(is_compatible(xField, yField));
+  STK_ThrowRequire(is_compatible(xField, zField));
+
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
+
+  field_data_execute<T, T, T, ReadOnly, ReadOnly, OverwriteAll>(xField,
+                                                                yField,
+                                                                zField,
+                                                                [&buckets, alpha, beta](auto& xData, auto& yData, auto& zData) {
+                                                                  FieldBlasImpl<T>::axpbyz(buckets, alpha, xData, beta, yData, zData);
+                                                                });
+}
+
+template <typename T>
+inline
+void field_axpbyz(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const FieldBase& zField)
+{
+  const Selector selector = selectField(xField) & selectField(yField) & selectField(zField);
+  field_axpbyz(alpha, xField, beta, yField, zField, selector);
+}
 
 //==============================================================================
 // product: z[i] = x[i] * y[i]
@@ -1154,62 +1182,12 @@ void field_product(const FieldBase& xField, const FieldBase& yField, const Field
 
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
-  const stk::mesh::Layout xLayout = xField.host_data_layout();
-  const stk::mesh::Layout yLayout = yField.host_data_layout();
-  const stk::mesh::Layout zLayout = zField.host_data_layout();
-
-  if (xLayout == Layout::Right && yLayout == Layout::Right && zLayout == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Right>();
-    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
-  }
-  else if (xLayout == Layout::Right && yLayout == Layout::Right && zLayout == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Left>();
-    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
-  }
-  else if (xLayout == Layout::Right && yLayout == Layout::Left && zLayout == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Right>();
-    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
-  }
-  else if (xLayout == Layout::Right && yLayout == Layout::Left && zLayout == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Left>();
-    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
-  }
-  else if (xLayout == Layout::Left && yLayout == Layout::Right && zLayout == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Right>();
-    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
-  }
-  else if (xLayout == Layout::Left && yLayout == Layout::Right && zLayout == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Left>();
-    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
-  }
-  else if (xLayout == Layout::Left && yLayout == Layout::Left && zLayout == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Right>();
-    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
-  }
-  else if (xLayout == Layout::Left && yLayout == Layout::Left && zLayout == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Left>();
-    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
-  }
-  else {
-    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_product().  xField layout: " << xLayout <<
-                      ", yField layout: " << yLayout << ", zField layout: " << zLayout);
-  }
+  field_data_execute<T, T, T, ReadOnly, ReadOnly, OverwriteAll>(xField,
+                                                                yField,
+                                                                zField,
+                                                                [&buckets](auto& xData, auto& yData, auto& zData) {
+                                                                  FieldBlasImpl<T>::product(buckets, xData, yData, zData);
+                                                                });
 }
 
 template <typename T>
@@ -1287,55 +1265,11 @@ void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector
 
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
-  // We need to remove the modify_on_host()/modify_on_device() behavior from this, as well as
-  // the device-side copying.  Folks should use the NGP-flavored version of field_copy() if
-  // they want to copy data in a different memory space, rather than relying on an odd
-  // side-effect of this function.  None of the other functions in this file have this
-  // behavior.
-#ifdef STK_USE_DEVICE_MESH
-  const bool upToDateOnHost = not xField.need_sync_to_host();
-  if (upToDateOnHost) {
-#endif
-    const stk::mesh::Layout xLayout = xField.host_data_layout();
-    const stk::mesh::Layout yLayout = yField.host_data_layout();
-
-    if (xLayout == Layout::Right && yLayout == Layout::Right) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      auto yData = yField.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Right>();
-      FieldBlasImpl<T>::copy(buckets, xData, yData);
-    }
-    else if (xLayout == Layout::Left && yLayout == Layout::Left) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      auto yData = yField.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Left>();
-      FieldBlasImpl<T>::copy(buckets, xData, yData);
-    }
-    else if (xLayout == Layout::Right && yLayout == Layout::Left) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      auto yData = yField.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Left>();
-      FieldBlasImpl<T>::copy(buckets, xData, yData);
-    }
-    else if (xLayout == Layout::Left && yLayout == Layout::Right) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      auto yData = yField.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Right>();
-      FieldBlasImpl<T>::copy(buckets, xData, yData);
-    }
-
-#ifdef STK_USE_DEVICE_MESH
-  }
-  else {
-    if constexpr (std::is_floating_point_v<T> || std::is_same_v<T, int>) {
-      auto ngpMesh = stk::mesh::get_updated_ngp_mesh(xField.get_mesh());
-
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::MemSpace>();
-      auto yData = yField.data<T, ReadWrite, stk::ngp::MemSpace>();
-      LegacyDeviceFieldCopy fieldCopy(xData, yData);
-      stk::mesh::for_each_entity_run(ngpMesh, xField.entity_rank(), selector, fieldCopy);
-    }
-    else {
-      STK_ThrowErrorMsg("Device Fields do not support std::complex datatypes!");
-    }
-  }
-#endif
+  field_data_execute<T, T, ReadOnly, OverwriteAll>(xField,
+                                                   yField,
+                                                   [&buckets](auto xData, auto yData) {
+                                                     FieldBlasImpl<T>::copy(buckets, xData, yData);
+                                                   });
 }
 
 inline
@@ -1381,8 +1315,8 @@ T field_dot(const Field<T, xLayout>& xField, const Field<T, yLayout>& yField, co
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                               selector & xField.mesh_meta_data().locally_owned_part());
 
-  auto xData = xField.template data<ConstUnsynchronized>();
-  auto yData = yField.template data<Unsynchronized>();
+  auto xData = xField.template data<ReadOnly>();
+  auto yData = yField.template data<ReadOnly>();
   T localResult = FieldBlasImpl<T>::dot(buckets, xData, yData);
 
   T globalResult = localResult;
@@ -1476,7 +1410,7 @@ T field_nrm2(const Field<T, xLayout>& xField, const Selector& selector, const MP
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                               selector & xField.mesh_meta_data().locally_owned_part());
 
-  auto xData = xField.template data<ConstUnsynchronized>();
+  auto xData = xField.template data<ReadOnly>();
   T localResult = FieldBlasImpl<T>::nrm2(buckets, xData);
 
   T globalResult = localResult;
@@ -1559,18 +1493,10 @@ void field_scale(T alpha, const FieldBase& xField, const Selector& selector)
 
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
-  if (xField.host_data_layout() == Layout::Right) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    FieldBlasImpl<T>::scale(buckets, alpha, xData);
-  }
-  else if (xField.host_data_layout() == Layout::Left) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    FieldBlasImpl<T>::scale(buckets, alpha, xData);
-  }
-  else {
-    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_scale().  xField layout: "
-                      << xField.host_data_layout());
-  }
+  field_data_execute<T, ReadWrite>(xField,
+                                   [&buckets, alpha](auto& xData) {
+                                     FieldBlasImpl<T>::scale(buckets, alpha, xData);
+                                   });
 }
 
 template <typename T>
@@ -1594,12 +1520,34 @@ void field_fill(T alpha, const FieldBase& xField, const Selector& selector)
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
   if (xField.host_data_layout() == Layout::Right) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, OverwriteAll, stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::fill(buckets, alpha, xData);
   }
   else if (xField.host_data_layout() == Layout::Left) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, OverwriteAll, stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::fill(buckets, alpha, xData);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_fill().  xField layout: "
+                      << xField.host_data_layout());
+  }
+}
+
+template <typename T>
+inline
+void field_fill(T alpha, const FieldBase& xField, int component, const Selector& selector)
+{
+  STK_ThrowRequire(is_compatible<T>(xField));
+
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
+
+  if (xField.host_data_layout() == Layout::Right) {
+    auto xData = xField.data<T, ReadWrite, stk::ngp::HostSpace, Layout::Right>();
+    FieldBlasImpl<T>::fill(buckets, alpha, xData, component);
+  }
+  else if (xField.host_data_layout() == Layout::Left) {
+    auto xData = xField.data<T, ReadWrite, stk::ngp::HostSpace, Layout::Left>();
+    FieldBlasImpl<T>::fill(buckets, alpha, xData, component);
   }
   else {
     STK_ThrowErrorMsg("Unsupported Field data layout detected in field_fill().  xField layout: "
@@ -1615,6 +1563,13 @@ void field_fill(T alpha, const FieldBase& xField)
   field_fill(alpha, xField, selector);
 }
 
+template <typename T>
+inline
+void field_fill(T alpha, const FieldBase& xField, int component)
+{
+  const Selector selector = selectField(xField);
+  field_fill(alpha, xField, component, selector);
+}
 
 template <typename T>
 inline
@@ -1636,6 +1591,26 @@ void field_fill(T alpha, const std::vector<const FieldBase*>& xFields)
   }
 }
 
+template <typename T>
+inline
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, int component, const Selector& selector)
+{
+  for (const FieldBase* field : xFields) {
+    STK_ThrowRequire(is_compatible<T>(*field));
+    field_fill(alpha, *field, component, selector);
+  }
+}
+
+template <typename T>
+inline
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, int component)
+{
+  for (const FieldBase* field : xFields) {
+    const Selector selector = selectField(*field);
+    field_fill(alpha, *field, component, selector);
+  }
+}
+
 
 //==============================================================================
 // fill_component: x[i, comp] = a[comp]
@@ -1649,11 +1624,11 @@ void field_fill_component(const T* alpha, const FieldBase& xField, const Selecto
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
   if (xField.host_data_layout() == Layout::Right) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::fill_component(buckets, alpha, xData);
   }
   else if (xField.host_data_layout() == Layout::Left) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::fill_component(buckets, alpha, xData);
   }
   else {
@@ -1684,29 +1659,11 @@ void field_swap(const FieldBase& xField, const FieldBase& yField, const Selector
 
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
-  const stk::mesh::Layout xLayout = xField.host_data_layout();
-  const stk::mesh::Layout yLayout = yField.host_data_layout();
-
-  if (xLayout == Layout::Right && yLayout == Layout::Right) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    FieldBlasImpl<T>::swap(buckets, xData, yData);
-  }
-  else if (xLayout == Layout::Left && yLayout == Layout::Left) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    FieldBlasImpl<T>::swap(buckets, xData, yData);
-  }
-  else if (xLayout == Layout::Right && yLayout == Layout::Left) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    FieldBlasImpl<T>::swap(buckets, xData, yData);
-  }
-  else if (xLayout == Layout::Left && yLayout == Layout::Right) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    FieldBlasImpl<T>::swap(buckets, xData, yData);
-  }
+  field_data_execute<T, T, ReadWrite, ReadWrite>(xField,
+                                                 yField,
+                                                 [&buckets](auto& xData, auto& yData) {
+                                                   FieldBlasImpl<T>::swap(buckets, xData, yData);
+                                                 });
 }
 
 inline
@@ -1751,7 +1708,7 @@ T field_asum(const Field<T, xLayout>& xField, const Selector& selector, const MP
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                               selector & xField.mesh_meta_data().locally_owned_part());
 
-  auto xData = xField.template data<ConstUnsynchronized>();
+  auto xData = xField.template data<ReadOnly>();
   T localResult = FieldBlasImpl<T>::asum(buckets, xData);
 
   T globalResult = localResult;
@@ -1832,7 +1789,7 @@ T field_amax(const Field<T, xLayout>& xField, const Selector& selector, const MP
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                               selector & xField.mesh_meta_data().locally_owned_part());
 
-  auto xData = xField.template data<ConstUnsynchronized>();
+  auto xData = xField.template data<ReadOnly>();
   T localMaxValue = FieldBlasImpl<T>::amax(buckets, xData);
 
   T globalResult = localMaxValue;
@@ -1906,7 +1863,9 @@ void field_amax(T& result, const FieldBase& xFieldBase)
 //==============================================================================
 // eamax: Entity(loc:global_max( max_i( abs(x[i]) )))
 //
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2026
 template <typename T>
+STK_DEPRECATED
 inline
 Entity field_eamax(const FieldBase& xField, const Selector& selector)
 {
@@ -1921,11 +1880,11 @@ Entity field_eamax(const FieldBase& xField, const Selector& selector)
   T localMaxValue {};
 
   if (xLayout == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
     localMinMaxInfo = FieldBlasImpl<T>::iamax(buckets, xData, localMaxValue);
   }
   else if (xLayout == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
     localMinMaxInfo = FieldBlasImpl<T>::iamax(buckets, xData, localMaxValue);
   }
   else {
@@ -1959,6 +1918,7 @@ Entity field_eamax(const FieldBase& xField, const Selector& selector)
   }
 }
 
+STK_DEPRECATED
 inline
 Entity field_eamax(const FieldBase& xField, const Selector& selector)
 {
@@ -1984,6 +1944,7 @@ Entity field_eamax(const FieldBase& xField, const Selector& selector)
   return stk::mesh::Entity();
 }
 
+STK_DEPRECATED
 inline
 Entity field_eamax(const FieldBase& xField)
 {
@@ -1992,13 +1953,14 @@ Entity field_eamax(const FieldBase& xField)
 }
 
 template <typename T>
+STK_DEPRECATED
 inline
 Entity field_eamax(const Field<T>& xField)
 {
   const Selector selector = selectField(xField);
   return field_eamax(xField, selector);
 }
-
+#endif
 
 //==============================================================================
 // amin: global_min( min_i( abs(x[i]) ))
@@ -2010,7 +1972,7 @@ T field_amin(const Field<T, xLayout>& xField, const Selector& selector, const MP
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                               selector & xField.mesh_meta_data().locally_owned_part());
 
-  auto xData = xField.template data<ConstUnsynchronized>();
+  auto xData = xField.template data<ReadOnly>();
   T localMinValue = FieldBlasImpl<T>::amin(buckets, xData);
 
   T globalResult = localMinValue;
@@ -2084,7 +2046,9 @@ void field_amin(T& result, const FieldBase& xFieldBase)
 //==============================================================================
 // eamin: Entity(loc:global_min( min_i( abs(x[i]) )))
 //
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2026
 template <typename T>
+STK_DEPRECATED
 inline
 Entity field_eamin(const FieldBase& xField, const Selector& selector)
 {
@@ -2099,11 +2063,11 @@ Entity field_eamin(const FieldBase& xField, const Selector& selector)
   T localMinValue {};
 
   if (xLayout == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
     localMinMaxInfo = FieldBlasImpl<T>::iamin(buckets, xData, localMinValue);
   }
   else if (xLayout == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
     localMinMaxInfo = FieldBlasImpl<T>::iamin(buckets, xData, localMinValue);
   }
   else {
@@ -2137,6 +2101,7 @@ Entity field_eamin(const FieldBase& xField, const Selector& selector)
   }
 }
 
+STK_DEPRECATED
 inline
 Entity field_eamin(const FieldBase& xField, const Selector& selector)
 {
@@ -2162,6 +2127,7 @@ Entity field_eamin(const FieldBase& xField, const Selector& selector)
   return stk::mesh::Entity();
 }
 
+STK_DEPRECATED
 inline
 Entity field_eamin(const FieldBase& xField)
 {
@@ -2170,13 +2136,14 @@ Entity field_eamin(const FieldBase& xField)
 }
 
 template <typename T>
+STK_DEPRECATED
 inline
 Entity field_eamin(const Field<T>& xField)
 {
   const Selector selector = selectField(xField);
   return field_eamin(xField, selector);
 }
-
+#endif
 
 } // mesh
 } // stk

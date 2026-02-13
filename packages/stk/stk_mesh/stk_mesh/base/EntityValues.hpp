@@ -47,21 +47,23 @@ namespace stk::mesh {
 // Device EntityValues
 //==============================================================================
 
-template <typename T, typename MemSpace = stk::ngp::HostMemSpace,
-          Layout DataLayout = DefaultLayoutSelector<MemSpace>::layout>
+template <typename T, typename Space = stk::ngp::HostSpace,
+          Layout DataLayout = DefaultLayoutSelector<Space>::layout>
 class EntityValues
 {
 public:
   using value_type = T;
-  using mem_space = MemSpace;
+  using space = Space;
+  using exec_space = typename Space::exec_space;
+  using mem_space = typename Space::mem_space;
   static constexpr Layout layout = DataLayout;
 
   KOKKOS_INLINE_FUNCTION EntityValues(T* dataPtr, int numComponents, int numCopies, int scalarStride,
                                       [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_scalarStride(scalarStride)
@@ -105,7 +107,7 @@ public:
   KOKKOS_INLINE_FUNCTION bool is_field_defined() const { return m_numComponents != 0; }
 
   KOKKOS_INLINE_FUNCTION T& operator()(
-                                       const char* file = STK_DEVICE_FILE, int line = STK_DEVICE_LINE) const
+      const char* file = STK_DEVICE_FILE, int line = STK_DEVICE_LINE) const
   {
     check_defined_field(file, line);
     check_single_scalar_access(file, line);
@@ -139,7 +141,7 @@ public:
     check_defined_field(file, line);
     check_copy_and_component_bounds(copy, component, file, line);
 
-    return m_dataPtr[(static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride];
+    return m_dataPtr[(copy()*m_numComponents + component())*m_scalarStride];
   }
 
   KOKKOS_INLINE_FUNCTION T& operator()(ScalarIdx scalar,
@@ -326,18 +328,20 @@ private:
 //==============================================================================
 
 template <typename T>
-class EntityValues<T, stk::ngp::HostMemSpace, Layout::Right>
+class EntityValues<T, stk::ngp::HostSpace, Layout::Right>
 {
 public:
   using value_type = T;
-  using mem_space = stk::ngp::HostMemSpace;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
   static constexpr Layout layout = Layout::Right;
 
   inline EntityValues(T* dataPtr, int numComponents, int numCopies, [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies)
   {}
@@ -378,7 +382,7 @@ public:
   inline bool is_field_defined() const { return m_numComponents != 0; }
 
   inline T& operator()(
-                       const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const
+      const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const
   {
     check_defined_field(file, line);
     check_single_scalar_access(file, line);
@@ -412,7 +416,7 @@ public:
     check_defined_field(file, line);
     check_copy_and_component_bounds(copy, component, file, line);
 
-    return m_dataPtr[static_cast<int>(copy)*m_numComponents + static_cast<int>(component)];
+    return m_dataPtr[copy()*m_numComponents + component()];
   }
 
   inline T& operator()(ScalarIdx scalar,
@@ -545,19 +549,21 @@ private:
 //==============================================================================
 
 template <typename T>
-class EntityValues<T, stk::ngp::HostMemSpace, Layout::Left>
+class EntityValues<T, stk::ngp::HostSpace, Layout::Left>
 {
 public:
   using value_type = T;
-  using mem_space = stk::ngp::HostMemSpace;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
   static constexpr Layout layout = Layout::Left;
 
   inline EntityValues(T* dataPtr, int numComponents, int numCopies, int scalarStride,
                       [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_scalarStride(scalarStride)
@@ -599,7 +605,7 @@ public:
   inline bool is_field_defined() const { return m_numComponents != 0; }
 
   inline T& operator()(
-                       const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const
+      const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const
   {
     check_defined_field(file, line);
     check_single_scalar_access(file, line);
@@ -633,7 +639,7 @@ public:
     check_defined_field(file, line);
     check_copy_and_component_bounds(copy, component, file, line);
 
-    return m_dataPtr[(static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride];
+    return m_dataPtr[(copy()*m_numComponents + component())*m_scalarStride];
   }
 
   inline T& operator()(ScalarIdx scalar,
@@ -766,19 +772,21 @@ private:
 //==============================================================================
 
 template <typename T>
-class EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>
+class EntityValues<T, stk::ngp::HostSpace, Layout::Auto>
 {
 public:
   using value_type = T;
-  using mem_space = stk::ngp::HostMemSpace;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
   static constexpr Layout layout = Layout::Auto;
 
   inline EntityValues(T* dataPtr, int numComponents, int numCopies,
                       [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_scalarStride(1),
@@ -788,9 +796,9 @@ public:
   inline EntityValues(T* dataPtr, int numComponents, int numCopies, int scalarStride,
                       [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_scalarStride(scalarStride),
@@ -833,7 +841,7 @@ public:
   inline bool is_field_defined() const { return m_numComponents != 0; }
 
   inline T& operator()(
-                       const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const
+      const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const
   {
     check_defined_field(file, line);
     check_single_scalar_access(file, line);
@@ -890,7 +898,7 @@ public:
     // The striding math here is complex enough for both layouts that branching would likely not help.
     // This is very similar to BucketValues access, where branching never helps.
 
-    return m_dataPtr[(static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride];
+    return m_dataPtr[(copy()*m_numComponents + component())*m_scalarStride];
   }
 
   inline T& operator()(ScalarIdx scalar,

@@ -13,7 +13,6 @@
 #include <algorithm>
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_AMESOS2)
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_IO.hpp>
 
@@ -36,7 +35,7 @@ Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                                            Nullspace->getMap()->getComm(),
                                                                            Xpetra::LocallyReplicated);
 
-  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, Nullspace->getNumVectors());
+  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, Nullspace->getNumVectors(), false);
   const Scalar ONE                                                                     = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar ZERO                                                                    = Teuchos::ScalarTraits<Scalar>::zero();
   tempMV->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ONE, *Nullspace, *Nullspace, ZERO);
@@ -44,7 +43,7 @@ Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::HostSpace> Q("Q", Nullspace->getNumVectors(), Nullspace->getNumVectors());
   int LDQ;
   {
-    auto dots = tempMV->getLocalViewHost(Xpetra::Access::ReadOnly);
+    auto dots = tempMV->getLocalViewHost(Tpetra::Access::ReadOnly);
     Kokkos::deep_copy(Q, dots);
     LDQ = Q.stride(1);
   }
@@ -75,7 +74,7 @@ void Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // Nullspace_ ^T * X
   Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, X.getNumVectors());
   tempMV->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ONE, *Nullspace_, X, ZERO);
-  auto dots      = tempMV->getLocalViewHost(Xpetra::Access::ReadOnly);
+  auto dots      = tempMV->getLocalViewHost(Tpetra::Access::ReadOnly);
   bool doProject = true;
   for (size_t i = 0; i < X.getNumVectors(); i++) {
     for (size_t j = 0; j < Nullspace_->getNumVectors(); j++) {
@@ -113,7 +112,7 @@ Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Amesos2Smoother(cons
 #if defined(HAVE_AMESOS2_KLU2)
     type_ = "Klu";
 #elif defined(HAVE_AMESOS2_SUPERLU)
-    type_          = "Superlu";
+    type_ = "Superlu";
 #elif defined(HAVE_AMESOS2_SUPERLUDIST)
     type_ = "Superludist";
 #elif defined(HAVE_AMESOS2_BASKER)
@@ -196,27 +195,19 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
         elements[k] = Teuchos::as<GO>(k);
       colMap           = MapFactory::Build(rowMap->lib(), gblNumCols * rowMap->getComm()->getSize(), elements, Teuchos::ScalarTraits<GO>::zero(), rowMap->getComm());
       importer         = ImportFactory::Build(rowMap, colMap);
-      ghostedNullspace = MultiVectorFactory::Build(colMap, Nullspace->getNumVectors());
+      ghostedNullspace = MultiVectorFactory::Build(colMap, Nullspace->getNumVectors(), false);
       ghostedNullspace->doImport(*Nullspace, *importer, Xpetra::INSERT);
     } else {
       ghostedNullspace = Nullspace;
       colMap           = rowMap;
     }
 
-#if KOKKOS_VERSION >= 40799
-    using ATS = KokkosKernels::ArithTraits<SC>;
-#else
-    using ATS      = Kokkos::ArithTraits<SC>;
-#endif
+    using ATS         = KokkosKernels::ArithTraits<SC>;
     using impl_Scalar = typename ATS::val_type;
-#if KOKKOS_VERSION >= 40799
-    using impl_ATS = KokkosKernels::ArithTraits<impl_Scalar>;
-#else
-    using impl_ATS = Kokkos::ArithTraits<impl_Scalar>;
-#endif
-    using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
+    using impl_ATS    = KokkosKernels::ArithTraits<impl_Scalar>;
+    using range_type  = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
-    typedef typename Matrix::local_matrix_type KCRS;
+    typedef typename Matrix::local_matrix_device_type KCRS;
     typedef typename KCRS::StaticCrsGraphType graph_t;
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
     typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -239,8 +230,8 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
 
     // form normalization * nullspace * nullspace^T
     {
-      auto lclNullspace        = Nullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
-      auto lclGhostedNullspace = ghostedNullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lclNullspace        = Nullspace->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto lclGhostedNullspace = ghostedNullspace->getLocalViewDevice(Tpetra::Access::ReadOnly);
       Kokkos::parallel_for(
           "MueLu:Amesos2Smoother::fixNullspace_1", range_type(0, lclNumRows + 1),
           KOKKOS_LAMBDA(const size_t i) {
@@ -421,5 +412,4 @@ size_t Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmooth
 }
 }  // namespace MueLu
 
-#endif  // HAVE_MUELU_AMESOS2
 #endif  // MUELU_AMESOS2SMOOTHER_DEF_HPP

@@ -115,7 +115,6 @@ Abstract::Vector& Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 random(bool useSeed, int seed)
 {
     if (!tpetraVec->isDistributed())
-#if KOKKOS_VERSION >= 40799
     {
         if (tpetraVec->getMap()->getComm()->getRank() == 0) {
             tpetraVec->randomize(-KokkosKernels::ArithTraits<Scalar>::one(), KokkosKernels::ArithTraits<Scalar>::one());
@@ -128,20 +127,6 @@ random(bool useSeed, int seed)
     else {
         tpetraVec->randomize(-KokkosKernels::ArithTraits<Scalar>::one(), KokkosKernels::ArithTraits<Scalar>::one());
     }
-#else
-    {
-        if (tpetraVec->getMap()->getComm()->getRank() == 0) {
-            tpetraVec->randomize(-Kokkos::ArithTraits<Scalar>::one(), Kokkos::ArithTraits<Scalar>::one());
-        }
-        else {
-            tpetraVec->putScalar(Kokkos::ArithTraits<Scalar>::zero());
-        }
-        tpetraVec->reduce();
-    }
-    else {
-        tpetraVec->randomize(-Kokkos::ArithTraits<Scalar>::one(), Kokkos::ArithTraits<Scalar>::one());
-    }
-#endif
     return *this;
 }
 
@@ -255,7 +240,7 @@ createMultiVector(int numVecs, CopyType type) const {
         newMultiVec->setImplicitWeighting(do_implicit_weighting);
     }
 
-    return std::move(newMultiVec);
+    return newMultiVec;
 }
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>

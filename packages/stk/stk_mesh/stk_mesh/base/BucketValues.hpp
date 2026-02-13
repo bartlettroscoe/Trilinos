@@ -47,20 +47,23 @@ namespace stk::mesh {
 // Device BucketValues
 //==============================================================================
 
-template <typename T, typename MemSpace = stk::ngp::HostMemSpace,
-          Layout DataLayout = DefaultLayoutSelector<MemSpace>::layout>
-class BucketValues {
+template <typename T, typename Space = stk::ngp::HostSpace,
+          Layout DataLayout = DefaultLayoutSelector<Space>::layout>
+class BucketValues
+{
 public:
   using value_type = T;
-  using mem_space = MemSpace;
+  using space = Space;
+  using exec_space = typename Space::exec_space;
+  using mem_space = typename Space::mem_space;
   static constexpr Layout layout = DataLayout;
 
   KOKKOS_INLINE_FUNCTION BucketValues(T* dataPtr, int numComponents, int numCopies, int numEntities,
                                       int scalarStride, [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_numEntities(numEntities),
@@ -128,7 +131,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_component_bounds(component, file, line);
 
-    return m_dataPtr[static_cast<int>(component)*m_scalarStride + static_cast<int>(entity)];
+    return m_dataPtr[component()*m_scalarStride + entity()];
   }
 
   KOKKOS_INLINE_FUNCTION T& operator()(EntityIdx entity, CopyIdx copy,
@@ -139,7 +142,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_bounds(copy, file, line);
 
-    return m_dataPtr[static_cast<int>(copy)*m_scalarStride + static_cast<int>(entity)];
+    return m_dataPtr[copy()*m_scalarStride + entity()];
   }
 
   KOKKOS_INLINE_FUNCTION T& operator()(EntityIdx entity, CopyIdx copy, ComponentIdx component,
@@ -149,8 +152,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_and_component_bounds(copy, component, file, line);
 
-    return m_dataPtr[(static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride +
-                     static_cast<int>(entity)];
+    return m_dataPtr[(copy()*m_numComponents + component())*m_scalarStride + entity()];
   }
 
   KOKKOS_INLINE_FUNCTION T& operator()(EntityIdx entity, ScalarIdx scalar,
@@ -160,7 +162,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_scalar_bounds(scalar, file, line);
 
-    return m_dataPtr[static_cast<int>(scalar)*m_scalarStride + static_cast<int>(entity)];
+    return m_dataPtr[scalar()*m_scalarStride + entity()];
   }
 
 
@@ -310,7 +312,7 @@ private:
     }
   }
   KOKKOS_INLINE_FUNCTION void check_entity_bounds(int entity, const char* file, int line) const {
-    if ((static_cast<int>(entity) < 0) || (static_cast<int>(entity) >= m_numEntities)) {
+    if ((entity < 0) || (entity >= m_numEntities)) {
       if (line == -1) {
         printf("Error: Out-of-bounds access to BucketValues for Field '%s' with Entity index %i for a Bucket"
                " with %i Entities.\n", m_fieldName, entity, m_numEntities);
@@ -365,14 +367,21 @@ private:
 //==============================================================================
 
 template<typename T>
-class BucketValues<T, stk::ngp::HostMemSpace, Layout::Right> {
+class BucketValues<T, stk::ngp::HostSpace, Layout::Right>
+{
 public:
+  using value_type = T;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
+  static constexpr Layout layout = Layout::Right;
+
   inline BucketValues(T* dataPtr, int numComponents, int numCopies, int numEntities,
                       [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_numEntities(numEntities)
@@ -439,7 +448,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_component_bounds(component, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_numComponents + static_cast<int>(component)];
+    return m_dataPtr[entity()*m_numComponents + component()];
   }
 
   inline T& operator()(EntityIdx entity, CopyIdx copy,
@@ -450,7 +459,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_bounds(copy, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_numCopies + static_cast<int>(copy)];
+    return m_dataPtr[entity()*m_numCopies + copy()];
   }
 
   inline T& operator()(EntityIdx entity, CopyIdx copy, ComponentIdx component,
@@ -460,8 +469,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_and_component_bounds(copy, component, file, line);
 
-    return m_dataPtr[(static_cast<int>(entity)*m_numCopies + static_cast<int>(copy))*m_numComponents +
-                     static_cast<int>(component)];
+    return m_dataPtr[(entity()*m_numCopies + copy())*m_numComponents + component()];
   }
 
   inline T& operator()(EntityIdx entity, ScalarIdx scalar,
@@ -471,7 +479,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_scalar_bounds(scalar, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_numCopies*m_numComponents + static_cast<int>(scalar)];
+    return m_dataPtr[entity()*m_numCopies*m_numComponents + scalar()];
   }
 
 
@@ -616,14 +624,21 @@ private:
 //==============================================================================
 
 template<typename T>
-class BucketValues<T, stk::ngp::HostMemSpace, Layout::Left> {
+class BucketValues<T, stk::ngp::HostSpace, Layout::Left>
+{
 public:
+  using value_type = T;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
+  static constexpr Layout layout = Layout::Left;
+
   inline BucketValues(T* dataPtr, int numComponents, int numCopies, int numEntities, int scalarStride,
                       [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_numEntities(numEntities),
@@ -691,7 +706,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_component_bounds(component, file, line);
 
-    return m_dataPtr[static_cast<int>(component)*m_scalarStride + static_cast<int>(entity)];
+    return m_dataPtr[component()*m_scalarStride + entity()];
   }
 
   inline T& operator()(EntityIdx entity, CopyIdx copy,
@@ -702,7 +717,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_bounds(copy, file, line);
 
-    return m_dataPtr[static_cast<int>(copy)*m_scalarStride + static_cast<int>(entity)];
+    return m_dataPtr[copy()*m_scalarStride + entity()];
   }
 
   inline T& operator()(EntityIdx entity, CopyIdx copy, ComponentIdx component,
@@ -712,8 +727,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_and_component_bounds(copy, component, file, line);
 
-    return m_dataPtr[(static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride +
-                     static_cast<int>(entity)];
+    return m_dataPtr[(copy()*m_numComponents + component())*m_scalarStride + entity()];
   }
 
   inline T& operator()(EntityIdx entity, ScalarIdx scalar,
@@ -723,7 +737,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_scalar_bounds(scalar, file, line);
 
-    return m_dataPtr[static_cast<int>(scalar)*m_scalarStride + static_cast<int>(entity)];
+    return m_dataPtr[scalar()*m_scalarStride + entity()];
   }
 
 
@@ -869,14 +883,21 @@ private:
 //==============================================================================
 
 template<typename T>
-class BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto> {
+class BucketValues<T, stk::ngp::HostSpace, Layout::Auto>
+{
 public:
+  using value_type = T;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
+  static constexpr Layout layout = Layout::Auto;
+
   inline BucketValues(T* dataPtr, int numComponents, int numCopies, int numEntities,
                       [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_numEntities(numEntities),
@@ -887,9 +908,9 @@ public:
   inline BucketValues(T* dataPtr, int numComponents, int numCopies, int numEntities, int scalarStride,
                       [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_numEntities(numEntities),
@@ -958,7 +979,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_component_bounds(component, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_entityStride + static_cast<int>(component)*m_scalarStride];
+    return m_dataPtr[entity()*m_entityStride + component()*m_scalarStride];
   }
 
   inline T& operator()(EntityIdx entity, CopyIdx copy,
@@ -969,7 +990,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_bounds(copy, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_entityStride + static_cast<int>(copy)*m_scalarStride];
+    return m_dataPtr[entity()*m_entityStride + copy()*m_scalarStride];
   }
 
   inline T& operator()(EntityIdx entity, CopyIdx copy, ComponentIdx component,
@@ -979,8 +1000,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_and_component_bounds(copy, component, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_entityStride +
-                     (static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride];
+    return m_dataPtr[entity()*m_entityStride + (copy()*m_numComponents + component())*m_scalarStride];
   }
 
   inline T& operator()(EntityIdx entity, ScalarIdx scalar,
@@ -990,7 +1010,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_scalar_bounds(scalar, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_entityStride + static_cast<int>(scalar)*m_scalarStride];
+    return m_dataPtr[entity()*m_entityStride + scalar()*m_scalarStride];
   }
 
 

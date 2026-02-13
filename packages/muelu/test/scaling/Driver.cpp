@@ -36,7 +36,7 @@
 #include <Galeri_XpetraParameters.hpp>
 
 #include <MueLu.hpp>
-
+#include "MueLu_MasterList.hpp"
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_PerfModelReporter.hpp>
@@ -76,23 +76,15 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalO
   if (equilibrate_no)
     return;
 
-#if KOKKOS_VERSION >= 40799
   typedef typename Tpetra::Details::EquilibrationInfo<typename KokkosKernels::ArithTraits<Scalar>::val_type, typename Node::device_type> equil_type;
-#else
-  typedef typename Tpetra::Details::EquilibrationInfo<typename Kokkos::ArithTraits<Scalar>::val_type, typename Node::device_type> equil_type;
-#endif
 
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A = toTpetra(Axpetra);
 
   if (Axpetra->getRowMap()->lib() == Xpetra::UseTpetra) {
     equil_type equibResult_ = computeRowAndColumnOneNorms(*A, assumeSymmetric);
     if (equilibrate_1norm) {
-      using device_type = typename Node::device_type;
-#if KOKKOS_VERSION >= 40799
-      using mag_type = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
-#else
-      using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
-#endif
+      using device_type      = typename Node::device_type;
+      using mag_type         = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
       using mag_view_type    = Kokkos::View<mag_type*, device_type>;
       using scalar_view_type = Kokkos::View<typename equil_type::val_type*, device_type>;
 
@@ -149,7 +141,7 @@ void reorderMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdin
 
   Kokkos::View<GlobalOrdinal*, typename Node::memory_space> elementList("", sourceMap->getLocalNumElements());
   auto lclSourceMap = sourceMap->getLocalMap();
-  auto lclOrdering  = ordering->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  auto lclOrdering  = ordering->getLocalViewDevice(Tpetra::Access::ReadOnly);
   Kokkos::parallel_for(
       "",
       Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>(0, sourceMap->getLocalNumElements()),
@@ -233,8 +225,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   double dtol = 1e-12, tol;
   clp.setOption("tol", &dtol, "solver convergence tolerance");
   bool binaryFormat = false;
-  clp.setOption("binary", "ascii", &binaryFormat, "print timings to screen");
-
+  clp.setOption("binary", "ascii", &binaryFormat, "format of input matrix file");
   std::string rowMapFile;
   clp.setOption("rowmap", &rowMapFile, "map data file");
   std::string colMapFile;
@@ -286,6 +277,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("equilibrate", &equilibrate, "equilibrate the system (no | diag | 1-norm)");
   bool reorder = false;
   clp.setOption("reorder", "no-reorder", &reorder, "reorder system using reverse CuthillMcKee");
+  bool repartition = false;
+  clp.setOption("repartition", "no-repartition", &repartition, "Repartition matrix before setting up a solver");
+  std::string repartitionXMLFilename = "";
+  clp.setOption("repartXML", &repartitionXMLFilename, "read initial repartitioning parameters from an xml file");
 
   bool profileSetup = false;
   bool profileSolve = false;
@@ -344,13 +339,30 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   if (yamlFileName != "") {
     Teuchos::updateParametersFromYamlFileAndBroadcast(yamlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
   } else {
-    if (Node::is_gpu)
-      xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling-gpu.xml");
-    else if (inst == Xpetra::COMPLEX_INT_INT)
-      xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling-complex.xml");
-    else
-      xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling.xml");
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
+    if (xmlFileName != "DEFAULTS") {
+      if (Node::is_gpu)
+        xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling-gpu.xml");
+      else if (inst == Xpetra::COMPLEX_INT_INT)
+        xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling-complex.xml");
+      else
+        xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling.xml");
+      Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
+    } else {
+      paramList = *MueLu::MasterList::List();
+    }
+  }
+
+  Teuchos::RCP<ParameterList> repartitionParamList;
+  if (repartition) {
+    if (!repartitionXMLFilename.empty()) {
+      repartitionParamList = Teuchos::make_rcp<ParameterList>();
+      Teuchos::updateParametersFromXmlFileAndBroadcast(repartitionXMLFilename, repartitionParamList.ptr(), *comm);
+    } else if (paramList.isSublist("repartition: params")) {
+      repartitionParamList = Teuchos::rcpFromRef(paramList.sublist("repartition: params"));
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                                 "To repartition either provide repartitioning parameters in the preconditioner input deck (specified using --xml) or as a separate file (--repartitionXMLFilename)");
+    }
   }
 
   if (inst == Xpetra::COMPLEX_INT_INT && dsolveType == "belos") {
@@ -432,7 +444,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<MultiVector> B;
 
   // Load the matrix off disk (or generate it via Galeri)
-  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
+  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream, repartitionParamList);
   comm->barrier();
   tm = Teuchos::null;
 
@@ -537,7 +549,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
             filename += "_" + rerunFileSuffix;
           if (numReruns > 1)
             filename += "_run" + MueLu::toString(rerunCount);
-          filename += (lib == Xpetra::UseEpetra ? ".epetra" : ".tpetra");
+          filename += ".tpetra";
 
           savedOut  = dup(STDOUT_FILENO);
           openedOut = fopen(filename.c_str(), "w");
@@ -573,9 +585,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       // Loop over the setup/solve pairs
       // =========================================================================
       for (int l = 0; l < numLoops; l++) {
-#ifdef HAVE_MUELU_TPETRA
         Tpetra::Details::ProfilingRegion("MueLu Setup/Solve");
-#endif
 
         // Use Kokkos tuning, if requested.  We use the PL-based interface here
         if (kokkosTuning) {

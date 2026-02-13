@@ -42,6 +42,14 @@ IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLVE
 
   INSTALL(TARGETS "${PACKAGE_NAME}_Driver")
 
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME Defaults
+    COMM serial mpi
+    ARGS "--xml=DEFAULTS"
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
+
   # Perf Model
   TRIBITS_ADD_TEST(
     Driver
@@ -124,6 +132,7 @@ IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLVE
       rap.xml
       recurMG.xml
       regularOverLap.dat
+      repart.xml
       sa_enforce_constraints.xml
       sa_with_Ifpack2_line_detection.xml
       sa_with_ilu.xml
@@ -194,6 +203,50 @@ IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLVE
     NAME MatrixMultiply_Performance_4
     COMM mpi
     ARGS "--timings --seed=12345 --minrows=8000 --maxrows=10000 --nmults=5"
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    MatrixMatrixMultiply
+    NAME MatrixMultiply_Performance_Laplace3D
+    COMM mpi
+    ARGS "--timings --nmults=5 --useGaleri --matrixType=Laplace3D --nx=22 --ny=22 --nz=22"
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    MatrixMatrixMultiply
+    NAME MatrixMultiply_Performance_Laplace3D
+    COMM mpi
+    ARGS "--timings --nmults=5 --useGaleri --matrixType=Laplace3D --nx=44 --ny=44 --nz=22"
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    MatrixMatrixMultiply
+    NAME MatrixMultiply_Performance_Brick3D
+    COMM mpi
+    ARGS "--timings --nmults=5 --useGaleri --matrixType=Brick3D --nx=22 --ny=22 --nz=22"
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    MatrixMatrixMultiply
+    NAME MatrixMultiply_Performance_Brick3D
+    COMM mpi
+    ARGS "--timings --nmults=5 --useGaleri --matrixType=Brick3D --nx=44 --ny=44 --nz=22"
     NUM_MPI_PROCS 4
     STANDARD_PASS_OUTPUT
     RUN_SERIAL
@@ -614,6 +667,16 @@ IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         PASS_REGULAR_EXPRESSION "Belos converged"
       )
     ENDIF()
+
+    TRIBITS_ADD_TEST(
+      Driver
+      NAME "DriverRebalanceInitialSystem"
+      ARGS "--linAlgebra=Tpetra --belosType=\"Pseudoblock GMRES\" --tol=1e-8 --xml=scaling.xml --matrix=aux2.mat --coords=coords2.mat --repartXML=repart.xml --its=9"
+      NUM_MPI_PROCS 3
+      COMM mpi # HAVE_MPI required
+      PASS_REGULAR_EXPRESSION "Belos converged"
+    )
+
   ENDIF()
 
   MUELU_ADD_SERIAL_AND_MPI_TEST(

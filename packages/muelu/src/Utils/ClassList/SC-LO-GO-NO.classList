@@ -93,10 +93,10 @@ ReorderBlockAFactory
 RepartitionFactory - #ifdef HAVE_MPI
 RepartitionBlockDiagonalFactory - #ifdef HAVE_MPI
 RepartitionHeuristicFactory - #ifdef HAVE_MPI
+RepartitionUtilities - #ifdef HAVE_MPI
 ReplicatePFactory
 RigidBodyModeFactory
 SaPFactory
-SaPFactory_kokkos - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 ScaledNullspaceFactory
 SchurComplementFactory
 SegregatedAFactory

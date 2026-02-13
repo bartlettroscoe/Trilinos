@@ -8,6 +8,7 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include "stk_mesh/base/FieldBase.hpp"
 #include "stk_mesh/base/FieldParallel.hpp"
 #include "stk_mesh/base/NgpFieldParallel.hpp"
 #include "stk_mesh/base/GetNgpField.hpp"
@@ -18,11 +19,12 @@
 #include "stk_unit_test_utils/TextMesh.hpp"
 #include <stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp>
 #include "../UnitTestUtils.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 
 namespace  {
 
 template <typename T>
-void check_field_on_device(stk::mesh::NgpMesh &mesh,
+void check_field_on_device(stk::mesh::NgpMesh & mesh,
                            stk::mesh::NgpField<T> & userField,
                            stk::mesh::NgpField<T> & goldValues)
 {
@@ -32,6 +34,24 @@ void check_field_on_device(stk::mesh::NgpMesh &mesh,
                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
                                  {
                                    NGP_EXPECT_NEAR(userField(entity, 0), goldValues(entity, 0), tol);
+                                 });
+}
+
+template <typename T>
+void check_field_on_device(stk::mesh::BulkData & mesh,
+                           stk::mesh::FieldBase & userField,
+                           stk::mesh::FieldBase & goldValues)
+{
+  const T tol = 1.e-12;
+  const auto fieldData = userField.template data<T, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+  const auto goldData = goldValues.template data<T, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+  stk::mesh::for_each_entity_run(stk::mesh::get_updated_ngp_mesh(mesh), stk::topology::NODE_RANK,
+                                 mesh.mesh_meta_data().universal_part(),
+                                 KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
+                                 {
+                                   auto fieldEntityValues = fieldData.entity_values(entity);
+                                   auto goldEntityValues = goldData.entity_values(entity);
+                                   NGP_EXPECT_NEAR(fieldEntityValues(0_comp), goldEntityValues(0_comp), tol);
                                  });
 }
 
@@ -49,8 +69,8 @@ protected:
   {
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().globally_shared_part());
     std::vector<int> sharingProcs;
-    auto goldData = goldValues.template data<T,stk::mesh::ReadWrite>();
-    auto userFieldData = userField.template data<T,stk::mesh::ReadWrite>();
+    auto goldData = goldValues.template data<T, stk::mesh::ReadWrite>();
+    auto userFieldData = userField.template data<T, stk::mesh::ReadWrite>();
 
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & node : *bucket) {
@@ -82,13 +102,9 @@ protected:
 
     initialize_shared_values<T>(userField, goldValues);
 
-    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    stk::mesh::NgpField<T> & deviceUserField = stk::mesh::get_updated_ngp_field<T>(userField);
-    stk::mesh::NgpField<T> & deviceGoldValues = stk::mesh::get_updated_ngp_field<T>(goldValues);
+    stk::mesh::parallel_sum<stk::ngp::HostSpace>(get_bulk(), std::vector<const stk::mesh::FieldBase*>{&userField});
 
-    stk::mesh::parallel_sum<T>(get_bulk(), std::vector<stk::mesh::NgpField<T>*>{&deviceUserField});
-
-    check_field_on_device<T>(ngpMesh, deviceUserField, deviceGoldValues);
+    check_field_on_device<T>(get_bulk(), userField, goldValues);
   }
 };
 
@@ -104,8 +120,8 @@ protected:
                                       bool leaveGoldValuesZero=false)
   {
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().globally_shared_part());
-    auto goldData = goldValues.data<double,stk::mesh::ReadWrite>();
-    auto userFieldData = userField.data<double,stk::mesh::ReadWrite>();
+    auto goldData = goldValues.data<double, stk::mesh::ReadWrite>();
+    auto userFieldData = userField.data<double, stk::mesh::ReadWrite>();
 
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & node : *bucket) {
@@ -136,8 +152,8 @@ protected:
                                        bool leaveGoldValuesZero=false)
   {
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, (get_meta().locally_owned_part() & !get_meta().globally_shared_part()) | get_meta().aura_part());
-    auto goldValuesData = goldValues.data<double,stk::mesh::ReadWrite>();
-    auto userFieldData = userField.data<double,stk::mesh::ReadWrite>();
+    auto goldValuesData = goldValues.data<double, stk::mesh::ReadWrite>();
+    auto userFieldData = userField.data<double, stk::mesh::ReadWrite>();
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & node : *bucket) {
         double id = static_cast<double>(get_bulk().identifier(node));
@@ -441,32 +457,6 @@ NGP_TEST_F(NgpParallelSum, heterogeneousMesh_elemTypesAllOnOneProc)
   test_parallel_sum<double>(build_heterogeneous_mesh_elem_types_all_on_one_proc);
 }
 
-#if defined(STK_USE_DEVICE_MESH) && !defined(STK_UNIFIED_MEMORY)
-NGP_TEST_F(NgpParallelSum, simpleVersion_noSyncToDeviceAfterwards)
-{
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  const int numStates = 1;
-  stk::mesh::FieldBase & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
-  stk::mesh::FieldBase & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
-  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
-  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
-
-  stk::io::fill_mesh("generated:1x1x4", get_bulk());
-
-  const bool leaveSharedGoldValuesNotSummed = true;
-  initialize_shared_values<double>(userField, goldValues, leaveSharedGoldValuesNotSummed);
-
-  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
-  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
-
-  const bool finalSyncToDevice = false;
-  stk::mesh::parallel_sum<double>(get_bulk(), std::vector<stk::mesh::NgpField<double>*>{&deviceUserField}, finalSyncToDevice);
-
-  check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
-}
-#endif
-
 NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion)
 {
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
@@ -612,8 +602,6 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData_noSyncToDeviceAf
 
 NGP_TEST_F(NgpParallelSum, DeviceMPIVersion_double)
 {
-  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
-
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
@@ -625,19 +613,13 @@ NGP_TEST_F(NgpParallelSum, DeviceMPIVersion_double)
 
   initialize_shared_values<double>(userField, goldValues);
 
-  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
-  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
+  stk::mesh::parallel_sum<stk::ngp::DeviceSpace>(get_bulk(), std::vector<const stk::mesh::FieldBase*>{&userField});
 
-  stk::mesh::parallel_sum(ngpMesh, std::vector<stk::mesh::NgpField<double>*>{&deviceUserField});
-
-  check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
+  check_field_on_device<double>(get_bulk(), userField, goldValues);
 }
 
 NGP_TEST_F(NgpParallelSum, DeviceMPIVersion_float)
 {
-  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
-
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   const int numStates = 1;
   stk::mesh::Field<float> & userField  = get_meta().declare_field<float>(stk::topology::NODE_RANK, "userField", numStates);
@@ -649,20 +631,52 @@ NGP_TEST_F(NgpParallelSum, DeviceMPIVersion_float)
 
   initialize_shared_values<float>(userField, goldValues);
 
-  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-  stk::mesh::NgpField<float> & deviceUserField = stk::mesh::get_updated_ngp_field<float>(userField);
-  stk::mesh::NgpField<float> & deviceGoldValues = stk::mesh::get_updated_ngp_field<float>(goldValues);
+  stk::mesh::parallel_sum<stk::ngp::DeviceSpace>(get_bulk(), std::vector<const stk::mesh::FieldBase*>{&userField});
 
-  stk::mesh::parallel_sum(ngpMesh, std::vector<stk::mesh::NgpField<float>*>{&deviceUserField});
+  check_field_on_device<float>(get_bulk(), userField, goldValues);
+}
 
-  check_field_on_device<float>(ngpMesh, deviceUserField, deviceGoldValues);
+NGP_TEST_F(NgpParallelSum, HostMPIVersion_double)
+{
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  const int numStates = 1;
+  stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
+  stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
+
+  stk::io::fill_mesh("generated:1x1x4", get_bulk());
+
+  initialize_shared_values<double>(userField, goldValues);
+
+  setenv("STK_USE_HOST_MPI_OVERRIDE", "true", 1);
+  stk::mesh::parallel_sum<stk::ngp::DeviceSpace>(get_bulk(), std::vector<const stk::mesh::FieldBase*>{&userField});
+
+  check_field_on_device<double>(get_bulk(), userField, goldValues);
+}
+
+NGP_TEST_F(NgpParallelSum, HostMPIVersion_float)
+{
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  const int numStates = 1;
+  stk::mesh::Field<float> & userField  = get_meta().declare_field<float>(stk::topology::NODE_RANK, "userField", numStates);
+  stk::mesh::Field<float> & goldValues = get_meta().declare_field<float>(stk::topology::NODE_RANK, "goldValues", numStates);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
+
+  stk::io::fill_mesh("generated:1x1x4", get_bulk());
+
+  initialize_shared_values<float>(userField, goldValues);
+
+  setenv("STK_USE_HOST_MPI_OVERRIDE", "true", 1);
+  stk::mesh::parallel_sum<stk::ngp::DeviceSpace>(get_bulk(), std::vector<const stk::mesh::FieldBase*>{&userField});
+
+  check_field_on_device<float>(get_bulk(), userField, goldValues);
 }
 #endif
 
 NGP_TEST_F(NgpParallelSum, Performance)
 {
-  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
-
   const std::string serialMeshName = "serialParallelSumMesh.g";
   if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
   {
@@ -688,10 +702,6 @@ NGP_TEST_F(NgpParallelSum, Performance)
 
   initialize_shared_values<double>(userField, goldValues);
 
-  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-  stk::mesh::NgpField<double> & deviceUserField = stk::mesh::get_updated_ngp_field<double>(userField);
-  stk::mesh::NgpField<double> & deviceGoldValues = stk::mesh::get_updated_ngp_field<double>(goldValues);
-
   const bool useSimpleDefault = true;
   bool useSimple = stk::unit_test_util::get_command_line_option("-s", useSimpleDefault);
 
@@ -701,7 +711,7 @@ NGP_TEST_F(NgpParallelSum, Performance)
   for (int i = 0; i < numIterations; ++i) {
     if (useSimple) {
       const double startTime = stk::wall_time();
-      stk::mesh::parallel_sum<double>(get_bulk(), std::vector<stk::mesh::NgpField<double>*>{&deviceUserField});
+      stk::mesh::parallel_sum<stk::ngp::HostSpace>(get_bulk(), std::vector<const stk::mesh::FieldBase*>{&userField});
       const double stopTime = stk::wall_time();
       const double localTime = stopTime - startTime;
       double globalTime = 0;
@@ -713,7 +723,7 @@ NGP_TEST_F(NgpParallelSum, Performance)
     }
     else {
       const double startTime = stk::wall_time();
-      stk::mesh::parallel_sum(ngpMesh, std::vector<stk::mesh::NgpField<double>*>{&deviceUserField});
+      stk::mesh::parallel_sum<stk::ngp::DeviceSpace>(get_bulk(), std::vector<const stk::mesh::FieldBase*>{&userField});
       const double stopTime = stk::wall_time();
       const double localTime = stopTime - startTime;
       double globalTime = 0;
@@ -726,7 +736,7 @@ NGP_TEST_F(NgpParallelSum, Performance)
   }
 
   if (numIterations == 1) {
-    check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
+    check_field_on_device<double>(get_bulk(), userField, goldValues);
   }
 
   unlink(serialMeshName.c_str());
@@ -765,7 +775,7 @@ protected:
   {
     stk::mesh::Selector shared = bulkPtr->mesh_meta_data().globally_shared_part();
     const stk::mesh::BucketVector& sharedNodeBuckets = bulkPtr->get_buckets(stk::topology::NODE_RANK, shared);
-    auto nodeFieldData = nodeField->template data<T,stk::mesh::ReadWrite>();
+    auto nodeFieldData = nodeField->template data<T, stk::mesh::ReadWrite>();
     for(const stk::mesh::Bucket* bptr : sharedNodeBuckets) {
       for(stk::mesh::Entity node : *bptr) {
         auto value = nodeFieldData.entity_values(node);
@@ -782,7 +792,7 @@ protected:
     std::vector<int> shProcs;
     constexpr T tol = 10*std::numeric_limits<T>::epsilon();
     const stk::mesh::BucketVector& sharedNodeBuckets = bulkPtr->get_buckets(stk::topology::NODE_RANK, shared);
-    auto nodeFieldData = nodeField->template data<T,stk::mesh::ReadOnly>();
+    auto nodeFieldData = nodeField->template data<T>();
     for(const stk::mesh::Bucket* bptr : sharedNodeBuckets) {
       for(stk::mesh::Entity node : *bptr) {
         if (skipID != 0 && bulkPtr->identifier(node) == skipID) {
@@ -821,16 +831,14 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_host)
   stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
   EXPECT_TRUE(bulkPtr->is_valid(node1));
 
-  auto nodeFieldData = nodeField->template data<double,stk::mesh::ReadWrite>();
-  auto value = nodeFieldData.entity_values(node1);
-  const double initValue = (myProc+1);
-  value(0_comp) = initValue;
+  {
+    auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
+    auto value = nodeFieldData.entity_values(node1);
+    const double initValue = (myProc+1);
+    value(0_comp) = initValue;
+  }
 
-  stk::mesh::HostMesh hostNgpMesh(*bulkPtr);
-  using HostNgpField = stk::mesh::HostField<double,stk::ngp::HostMemSpace>;
-  HostNgpField hostNgpField(*bulkPtr,*nodeField);
-  std::vector<HostNgpField*> hostNgpFields = {&hostNgpField};
-  stk::mesh::parallel_sum_including_ghosts<stk::mesh::HostMesh,HostNgpField,stk::ngp::HostMemSpace>(hostNgpMesh, hostNgpFields);
+  stk::mesh::parallel_sum_including_ghosts<stk::ngp::HostSpace>(*bulkPtr, {nodeField});
 
   constexpr double tolerance = 1.e-9;
 
@@ -841,7 +849,8 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_host)
 
   check_shared_field_values_on_host<double>(stk::mesh::Operation::SUM);
 
-  value = nodeFieldData.entity_values(node1);
+  auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
+  auto value = nodeFieldData.entity_values(node1);
   EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 }
 
@@ -862,16 +871,14 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_host_float)
   stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
   EXPECT_TRUE(bulkPtr->is_valid(node1));
 
-  auto nodeFieldData = nodeField->template data<float,stk::mesh::ReadWrite>();
-  auto value = nodeFieldData.entity_values(node1);
-  const float initValue = (myProc+1);
-  value(0_comp) = initValue;
+  {
+    auto nodeFieldData = nodeField->template data<float, stk::mesh::ReadWrite>();
+    auto value = nodeFieldData.entity_values(node1);
+    const float initValue = (myProc+1);
+    value(0_comp) = initValue;
+  }
 
-  stk::mesh::HostMesh hostNgpMesh(*bulkPtr);
-  using HostNgpField = stk::mesh::HostField<float,stk::ngp::HostMemSpace>;
-  HostNgpField hostNgpField(*bulkPtr,*nodeField);
-  std::vector<HostNgpField*> hostNgpFields = {&hostNgpField};
-  stk::mesh::parallel_sum_including_ghosts<stk::mesh::HostMesh,HostNgpField,stk::ngp::HostMemSpace>(hostNgpMesh, hostNgpFields);
+  stk::mesh::parallel_sum_including_ghosts<stk::ngp::HostSpace>(*bulkPtr, {nodeField});
 
   constexpr float tolerance = 1.e-9;
 
@@ -882,7 +889,8 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_host_float)
 
   check_shared_field_values_on_host<float>(stk::mesh::Operation::SUM);
 
-  value = nodeFieldData.entity_values(node1);
+  auto nodeFieldData = nodeField->template data<float, stk::mesh::ReadWrite>();
+  auto value = nodeFieldData.entity_values(node1);
   EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 }
 
@@ -903,25 +911,23 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node_and_elem_field_host
   stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
   EXPECT_TRUE(bulkPtr->is_valid(node1));
 
-  auto nodeFieldData = nodeField->template data<double,stk::mesh::ReadWrite>();
-  auto value = nodeFieldData.entity_values(node1);
-  const double initValue = (myProc+1);
-  value(0_comp) = initValue;
+  {
+    auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
+    auto value = nodeFieldData.entity_values(node1);
+    const double initValue = (myProc+1);
+    value(0_comp) = initValue;
+  }
 
   stk::mesh::Entity elem1 = bulkPtr->get_entity(stk::topology::ELEM_RANK, 1);
   if (bulkPtr->is_valid(elem1)) {
-    auto elemFieldData = elemField->template data<double,stk::mesh::ReadWrite>();
+    auto elemFieldData = elemField->template data<double, stk::mesh::ReadWrite>();
     auto elemValue = elemFieldData.entity_values(elem1);
     const double initVal = 1.0;
     elemValue(0_comp) = initVal;
   }
 
-  stk::mesh::HostMesh hostNgpMesh(*bulkPtr);
-  using HostNgpField = stk::mesh::HostField<double,stk::ngp::HostMemSpace>;
-  HostNgpField hostNgpNodeField(*bulkPtr,*nodeField);
-  HostNgpField hostNgpElemField(*bulkPtr,*elemField);
-  std::vector<HostNgpField*> hostNgpFields = {&hostNgpNodeField,&hostNgpElemField};
-  stk::mesh::parallel_sum_including_ghosts<stk::mesh::HostMesh,HostNgpField,stk::ngp::HostMemSpace>(hostNgpMesh, hostNgpFields);
+  auto fields = std::vector<const stk::mesh::FieldBase*>{nodeField, elemField};
+  stk::mesh::parallel_sum_including_ghosts<stk::ngp::HostSpace>(*bulkPtr, fields);
 
   constexpr double tolerance = 1.e-9;
 
@@ -932,7 +938,8 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node_and_elem_field_host
 
   check_shared_field_values_on_host<double>(stk::mesh::Operation::SUM);
 
-  value = nodeFieldData.entity_values(node1);
+  auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
+  auto value = nodeFieldData.entity_values(node1);
   EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 
   elem1 = bulkPtr->get_entity(stk::topology::ELEM_RANK, 1);
@@ -940,7 +947,7 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node_and_elem_field_host
     std::vector<int> commProcs;
     bulkPtr->comm_procs(elem1, commProcs);
     EXPECT_EQ(1u, commProcs.size());
-    auto elemFieldData = elemField->template data<double,stk::mesh::ReadWrite>();
+    auto elemFieldData = elemField->template data<double, stk::mesh::ReadWrite>();
     auto elemValue = elemFieldData.entity_values(elem1);
     const double expectedVal = commProcs.size()+1.0;
     EXPECT_NEAR(elemValue(0_comp), expectedVal, 1.e-9);
@@ -964,16 +971,14 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, max_hex_3procs_1ghostNode_host)
   stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
   EXPECT_TRUE(bulkPtr->is_valid(node1));
 
-  auto nodeFieldData = nodeField->template data<double,stk::mesh::ReadWrite>();
-  auto value = nodeFieldData.entity_values(node1);
-  const double initValue = (myProc+1);
-  value(0_comp) = initValue;
+  {
+    auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
+    auto value = nodeFieldData.entity_values(node1);
+    const double initValue = (myProc+1);
+    value(0_comp) = initValue;
+  }
 
-  stk::mesh::HostMesh hostNgpMesh(*bulkPtr);
-  using HostNgpField = stk::mesh::HostField<double,stk::ngp::HostMemSpace>;
-  HostNgpField hostNgpField(*bulkPtr,*nodeField);
-  std::vector<HostNgpField*> hostNgpFields = {&hostNgpField};
-  stk::mesh::parallel_max_including_ghosts<stk::mesh::HostMesh,HostNgpField,stk::ngp::HostMemSpace>(hostNgpMesh, hostNgpFields);
+  stk::mesh::parallel_max_including_ghosts<stk::ngp::HostSpace>(*bulkPtr, {nodeField});
 
   constexpr double tolerance = 1.e-9;
 
@@ -981,7 +986,8 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, max_hex_3procs_1ghostNode_host)
 
   check_shared_field_values_on_host<double>(stk::mesh::Operation::MAX);
 
-  value = nodeFieldData.entity_values(node1);
+  auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
+  auto value = nodeFieldData.entity_values(node1);
   EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 }
 
@@ -1002,16 +1008,14 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, min_hex_3procs_1ghostNode_host)
   stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
   EXPECT_TRUE(bulkPtr->is_valid(node1));
 
-  auto nodeFieldData = nodeField->template data<double,stk::mesh::ReadWrite>();
-  auto value = nodeFieldData.entity_values(node1);
-  const double initValue = (myProc+1);
-  value(0_comp) = initValue;
+  {
+    auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
+    auto value = nodeFieldData.entity_values(node1);
+    const double initValue = (myProc+1);
+    value(0_comp) = initValue;
+  }
 
-  stk::mesh::HostMesh hostNgpMesh(*bulkPtr);
-  using HostNgpField = stk::mesh::HostField<double,stk::ngp::HostMemSpace>;
-  HostNgpField hostNgpField(*bulkPtr,*nodeField);
-  std::vector<HostNgpField*> hostNgpFields = {&hostNgpField};
-  stk::mesh::parallel_min_including_ghosts<stk::mesh::HostMesh,HostNgpField,stk::ngp::HostMemSpace>(hostNgpMesh, hostNgpFields);
+  stk::mesh::parallel_min_including_ghosts<stk::ngp::HostSpace>(*bulkPtr, {nodeField});
 
   constexpr double tolerance = 1.e-9;
 
@@ -1019,7 +1023,8 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, min_hex_3procs_1ghostNode_host)
 
   check_shared_field_values_on_host<double>(stk::mesh::Operation::MAX);
 
-  value = nodeFieldData.entity_values(node1);
+  auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
+  auto value = nodeFieldData.entity_values(node1);
   EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 }
 
@@ -1028,9 +1033,6 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_device)
   stk::ParallelMachine comm = stk::parallel_machine_world();
   const int numProcs = stk::parallel_machine_size(comm);
   if(numProcs != 3) { GTEST_SKIP(); }
-#ifdef STK_ENABLE_GPU
-  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
-#endif
   const int myProc = stk::parallel_machine_rank(comm);
 
   setup_mesh();
@@ -1043,17 +1045,14 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_device)
   stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
   EXPECT_TRUE(bulkPtr->is_valid(node1));
 
-  auto nodeFieldData = nodeField->template data<double,stk::mesh::ReadWrite>();
-  auto value = nodeFieldData.entity_values(node1);
-  const double initValue = (myProc+1);
-  value(0_comp) = initValue;
+  {
+    auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
+    auto value = nodeFieldData.entity_values(node1);
+    const double initValue = (myProc+1);
+    value(0_comp) = initValue;
+  }
 
-  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
-  stk::mesh::NgpField<double> & ngpNodeField = stk::mesh::get_updated_ngp_field<double>(*nodeField);
-  std::vector<stk::mesh::NgpField<double>*> ngpFields = {&ngpNodeField};
-  stk::mesh::parallel_sum_including_ghosts(ngpMesh, ngpFields);
-
-  nodeField->sync_to_host();
+  stk::mesh::parallel_sum_including_ghosts<stk::ngp::DeviceSpace>(*bulkPtr, {nodeField});
 
   constexpr double tolerance = 1.e-9;
 
@@ -1064,7 +1063,8 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_device)
 
   check_shared_field_values_on_host<double>(stk::mesh::Operation::SUM);
 
-  value = nodeFieldData.entity_values(node1);
+  auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
+  auto value = nodeFieldData.entity_values(node1);
   EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 }
 
@@ -1073,9 +1073,6 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node5_sharedAndGhosted_d
   stk::ParallelMachine comm = stk::parallel_machine_world();
   const int numProcs = stk::parallel_machine_size(comm);
   if(numProcs != 3) { GTEST_SKIP(); }
-#ifdef STK_ENABLE_GPU
-  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
-#endif
   const int myProc = stk::parallel_machine_rank(comm);
 
   setup_mesh();
@@ -1089,18 +1086,13 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node5_sharedAndGhosted_d
   EXPECT_TRUE(bulkPtr->is_valid(node5));
 
   if (myProc == 2) {
-    auto nodeFieldData = nodeField->template data<double,stk::mesh::ReadWrite>();
+    auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
     auto value = nodeFieldData.entity_values(node5);
     const double initValue = 5;
     value(0_comp) = initValue;
   }
 
-  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
-  stk::mesh::NgpField<double> & ngpNodeField = stk::mesh::get_updated_ngp_field<double>(*nodeField);
-  std::vector<stk::mesh::NgpField<double>*> ngpFields = {&ngpNodeField};
-  stk::mesh::parallel_sum_including_ghosts(ngpMesh, ngpFields);
-
-  nodeField->sync_to_host();
+  stk::mesh::parallel_sum_including_ghosts<stk::ngp::DeviceSpace>(*bulkPtr, {nodeField});
 
   stk::mesh::EntityId nodeToSkip = 5;
   check_shared_field_values_on_host<double>(stk::mesh::Operation::SUM,nodeToSkip);
@@ -1109,7 +1101,7 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node5_sharedAndGhosted_d
 
   double expectedValue = numProcs*5;
 
-  auto nodeFieldData = nodeField->template data<double,stk::mesh::ReadWrite>();
+  auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
   auto value = nodeFieldData.entity_values(node5);
   EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 }
@@ -1119,9 +1111,6 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_two_mesh_mods_device)
   stk::ParallelMachine comm = stk::parallel_machine_world();
   const int numProcs = stk::parallel_machine_size(comm);
   if(numProcs != 3) { GTEST_SKIP(); }
-#ifdef STK_ENABLE_GPU
-  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
-#endif
   const int myProc = stk::parallel_machine_rank(comm);
 
   setup_mesh();
@@ -1135,10 +1124,7 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_two_mesh_mods_device)
   EXPECT_TRUE(bulkPtr->is_valid(node5));
 
   {
-  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
-  stk::mesh::NgpField<double> & ngpNodeField = stk::mesh::get_updated_ngp_field<double>(*nodeField);
-  std::vector<stk::mesh::NgpField<double>*> ngpFields = {&ngpNodeField};
-  stk::mesh::parallel_sum_including_ghosts(ngpMesh, ngpFields);
+  stk::mesh::parallel_sum_including_ghosts<stk::ngp::DeviceSpace>(*bulkPtr, {nodeField});
   }
 
   bulkPtr->modification_begin();
@@ -1151,10 +1137,7 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_two_mesh_mods_device)
   bulkPtr->modification_end();
 
   {
-  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
-  stk::mesh::NgpField<double> & ngpNodeField = stk::mesh::get_updated_ngp_field<double>(*nodeField);
-  std::vector<stk::mesh::NgpField<double>*> ngpFields = {&ngpNodeField};
-  EXPECT_NO_THROW(stk::mesh::parallel_sum_including_ghosts(ngpMesh, ngpFields));
+  EXPECT_NO_THROW(stk::mesh::parallel_sum_including_ghosts<stk::ngp::DeviceSpace>(*bulkPtr, {nodeField}));
   }
 }
 

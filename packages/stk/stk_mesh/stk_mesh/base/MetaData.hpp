@@ -291,6 +291,8 @@ public:
     return part;
   }
 
+  void rename(Part& part, const std::string& newName);
+
   void force_no_induce(Part& part)
   {
     if (part.primary_entity_rank() != InvalidEntityRank) {
@@ -858,6 +860,7 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank, const std::string
       f[i] = new Field<T, HostLayout>(this,
                                       arg_entity_rank,
                                       m_field_repo.get_fields().size(),
+                                      m_field_repo.get_fields(arg_entity_rank).size(),
                                       field_names[i],
                                       traits,
                                       number_of_states,

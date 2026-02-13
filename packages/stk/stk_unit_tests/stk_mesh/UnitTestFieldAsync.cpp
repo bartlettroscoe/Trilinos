@@ -121,7 +121,7 @@ public:
   void construct_device_data()
   {
     for(auto field : m_fields) {
-      field->data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+      field->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
     }
   }
 
@@ -245,7 +245,7 @@ public:
   {
     for(unsigned i = 0; i < m_fields.size(); i++) {
       auto field = m_fields[i];
-      field->synchronize<stk::mesh::ReadOnly, stk::ngp::HostMemSpace>();
+      field->synchronize<stk::mesh::ReadOnly, stk::ngp::HostSpace>();
     }
   }
 
@@ -253,7 +253,7 @@ public:
   {
     for(unsigned i = 0; i < m_fields.size(); i++) {
       auto field = m_fields[i];
-      field->synchronize<stk::mesh::ReadOnly, stk::ngp::HostMemSpace>(execSpaces[i % execSpaces.size()].get_execution_space());
+      field->synchronize<stk::mesh::ReadOnly, stk::ngp::HostSpace>(execSpaces[i % execSpaces.size()].get_execution_space());
     }
   }
 
@@ -261,7 +261,7 @@ public:
   {
     for(unsigned i = 0; i < m_fields.size(); i++) {
       auto field = m_fields[i];
-      field->synchronize<stk::mesh::ReadOnly, stk::ngp::MemSpace>(execSpaces[i % execSpaces.size()].get_execution_space());
+      field->synchronize<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>(execSpaces[i % execSpaces.size()].get_execution_space());
     }
   }
 
@@ -271,7 +271,7 @@ public:
     int numComponents = m_numComponents;
     int multiplier = m_multiplier;
     auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    auto fieldData = field->template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+    auto fieldData = field->template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, stk::mesh::Selector(*field),
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem)
@@ -293,7 +293,7 @@ public:
   {
     int multiplier = m_multiplier;
     auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    auto fieldData = field->template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+    auto fieldData = field->template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem)
@@ -336,7 +336,7 @@ public:
     stk::mesh::EntityVector elems;
     stk::mesh::get_selected_entities(stk::mesh::Selector(*field), get_bulk().buckets(stk::topology::ELEM_RANK), elems);
     unsigned multiplier = m_multiplier * scale;
-    auto fieldData = field->template data<stk::mesh::ReadOnly>();
+    auto fieldData = field->template data<>();
 
     for(auto elem : elems) {
       auto fieldValues = fieldData.entity_values(elem);
@@ -367,7 +367,7 @@ public:
   {
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, selector, elements);
-    auto fieldData = stkIntField.data();
+    auto fieldData = stkIntField.data<stk::mesh::ReadWrite>();
 
     for(stk::mesh::Entity elem : elements) {
       auto fieldValues = fieldData.entity_values(elem);
@@ -380,7 +380,7 @@ public:
   void set_element_field_data_on_device(stk::mesh::NgpMesh& ngpMesh, stk::mesh::Field<int>& stkIntField,
                                         const stk::mesh::Selector& selector, unsigned multiplier)
   {
-    auto fieldData = stkIntField.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    auto fieldData = stkIntField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
@@ -396,7 +396,7 @@ private:
   template<typename FieldType, typename Func>
   void check_result_on_host(FieldType field, stk::mesh::EntityVector elems, Func&& testValues)
   {
-    auto fieldData = field->template data<stk::mesh::ReadOnly>();
+    auto fieldData = field->data();
     for(auto elem : elems) {
       auto fieldValues = fieldData.entity_values(elem);
       for (stk::mesh::ComponentIdx component : fieldValues.components()) {
@@ -663,7 +663,7 @@ NGP_TEST_F(UnitTestFieldAsync, AsyncCopyFollowedByReacquiringFieldData)
   sync_fields_to_device_async(execSpaces);
 
   for(auto field : get_fields()) {
-    field->data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    field->data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
   }
   sync_fields_to_host();
 
@@ -761,7 +761,7 @@ NGP_TEST_F(UnitTestFieldAsync, AsyncAcquireFieldData)
   for(unsigned i = 0; i < get_fields().size(); i++) {
     auto field = get_fields()[i];
     auto execSpace = execSpaces[i % execSpaces.size()].get_execution_space();
-    field->data<stk::mesh::ReadOnly, stk::ngp::MemSpace>(execSpace);
+    field->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>(execSpace);
   }
 
   stk::mesh::ngp_field_fence(get_meta());

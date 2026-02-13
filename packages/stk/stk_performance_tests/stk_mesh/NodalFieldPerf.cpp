@@ -111,10 +111,10 @@ public:
 
   void testDeviceVectorFieldSum(unsigned NUM_ITERS)
   {
-    auto dispFieldData  = dispField->data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto velFieldData   = velField->data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto accFieldData   = accField->data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto forceFieldData = forceField->data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    auto dispFieldData  = dispField->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto velFieldData   = velField->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto accFieldData   = accField->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto forceFieldData = forceField->data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::NODE_RANK,
                                                                 get_meta().locally_owned_part());
@@ -139,24 +139,24 @@ public:
 
   void testHostVectorFieldSum(unsigned NUM_ITERS)
   {
-    auto dispFieldData  = dispField->data<stk::mesh::ReadOnly>();
-    auto velFieldData   = velField->data<stk::mesh::ReadOnly>();
-    auto accFieldData   = accField->data<stk::mesh::ReadOnly>();
+    auto dispFieldData  = dispField->data();
+    auto velFieldData   = velField->data();
+    auto accFieldData   = accField->data();
     auto forceFieldData = forceField->data<stk::mesh::ReadWrite>();
 
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
       const stk::mesh::BucketVector& buckets = get_bulk().get_buckets(stk::topology::NODE_RANK,
                                                                       get_meta().locally_owned_part());
       for (const stk::mesh::Bucket* bucket : buckets) {
-        auto dispValues  = dispFieldData.bucket_values(*bucket);
-        auto velValues   = velFieldData.bucket_values(*bucket);
-        auto accValues   = accFieldData.bucket_values(*bucket);
-        auto forceValues = forceFieldData.bucket_values(*bucket);
-        for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+        for (const stk::mesh::Entity& entity : *bucket) {
+          auto dispValues  = dispFieldData.entity_values(entity);
+          auto velValues   = velFieldData.entity_values(entity);
+          auto accValues   = accFieldData.entity_values(entity);
+          auto forceValues = forceFieldData.entity_values(entity);
           for (stk::mesh::ComponentIdx component : forceValues.components()) {
-            forceValues(entityIdx, component) = alpha * dispValues(entityIdx, component) +
-                                                beta * velValues(entityIdx, component) +
-                                                gamma * accValues(entityIdx, component);
+            forceValues(component) = alpha * dispValues(component) +
+                                     beta * velValues(component) +
+                                     gamma * accValues(component);
           }
         }
       }
@@ -172,7 +172,7 @@ public:
       expectedValues[i] = alpha * initial_value[i] + beta * initial_value[i] + gamma * initial_value[i];
     }
 
-    auto forceFieldData = forceField->data<stk::mesh::ReadOnly>();
+    auto forceFieldData = forceField->data();
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK,
                                                                      get_meta().locally_owned_part());
     for (stk::mesh::Bucket* bucket : buckets) {

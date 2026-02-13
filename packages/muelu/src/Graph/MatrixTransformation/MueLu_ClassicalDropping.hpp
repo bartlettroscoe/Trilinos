@@ -12,11 +12,7 @@
 
 #include "MueLu_DroppingCommon.hpp"
 #include "Kokkos_Core.hpp"
-#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
-#else
-#include "Kokkos_ArithTraits.hpp"
-#endif
 #include "Xpetra_Matrix.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -51,7 +47,7 @@ class DropFunctor {
  public:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using diag_vec_type      = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
   using memory_space       = typename local_matrix_type::memory_space;
@@ -59,17 +55,9 @@ class DropFunctor {
 
   using results_view = Kokkos::View<DecisionType*, memory_space>;
 
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS  = Kokkos::ArithTraits<scalar_type>;
-#endif
-  using magnitudeType = typename ATS::magnitudeType;
-#if KOKKOS_VERSION >= 40799
-  using mATS = KokkosKernels::ArithTraits<magnitudeType>;
-#else
-  using mATS = Kokkos::ArithTraits<magnitudeType>;
-#endif
+  using ATS                 = KokkosKernels::ArithTraits<scalar_type>;
+  using magnitudeType       = typename ATS::magnitudeType;
+  using mATS                = KokkosKernels::ArithTraits<magnitudeType>;
   using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
 
  private:
@@ -87,11 +75,11 @@ class DropFunctor {
     // Construct ghosted matrix diagonal
     if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
       diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(A_);
-      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
       diagVec    = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixMaxMinusOffDiagonal(A_);
-      auto lcl2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lcl2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag       = Kokkos::subview(lcl2d, Kokkos::ALL(), 0);
     }
   }

@@ -19,7 +19,7 @@ permissions:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: [self-hosted, gcc-10.4.0_openmpi-4.1.6]
+    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6]
     if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' }}
 
     permissions:
@@ -40,10 +40,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@f443b600d91635bebf5b0d9ebc620189c0d6fba5 # v3.29.5
+      uses: github/codeql-action/init@cdefb33c0f6224e58673d9004f47f7cb3e328b89
+      env:
+        NODE_USE_SYSTEM_CA: 1
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
@@ -68,6 +70,9 @@ jobs:
       working-directory: ./packages/framework
       run: |
           ./get_dependencies.sh
+
+    - name: Add Googletest
+      uses: ./.github/workflows/actions/add-spack-googletest
 
     - if: matrix.build-mode == 'manual'
       name: Generate CMake fragments
@@ -106,6 +111,6 @@ jobs:
           ninja -j 16
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@f443b600d91635bebf5b0d9ebc620189c0d6fba5 # v3.29.5
+      uses: github/codeql-action/analyze@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v3.29.5
       with:
         category: "/language:${{matrix.language}}"

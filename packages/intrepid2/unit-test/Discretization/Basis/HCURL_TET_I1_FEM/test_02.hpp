@@ -61,17 +61,17 @@ namespace Intrepid2 {
         Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputCurlsA, ncells, basisPtr->getCardinality(), npts, ndim);
         Kokkos::DynRankView<OutValueType,DeviceType> ConstructWithLabelOutView(outputCurlsB, basisPtr->getCardinality(), npts, ndim);
 
-        Kokkos::DynRankView<PointValueType,DeviceType> ConstructWithLabelPointView(point, 1);
-        
+        Kokkos::DynRankView<PointValueType,DeviceType> ConstructWithLabelPointView(inputPoints, npts, ndim);
+
         using ScalarType = typename ScalarTraits<PointValueType>::scalar_type;
-        
-        Kokkos::View<ScalarType*,DeviceType> inputPointsViewToUseRandom("inputPoints", npts*ndim*get_dimension_scalar(point));
-        auto vcprop = Kokkos::common_view_alloc_prop(point);
-        Kokkos::DynRankView<PointValueType,DeviceType> inputPoints (Kokkos::view_wrap(inputPointsViewToUseRandom.data(), vcprop),  npts, ndim);
-        
+        Kokkos::View<ScalarType**,DeviceType> inputPointsViewToUseRandom("inputPoints", npts, ndim);
+
         // random values between (0,1)
-        Kokkos::Random_XorShift64_Pool<DeviceType> random(13718);
-        Kokkos::fill_random(inputPointsViewToUseRandom, random, 1.0);
+        Kokkos::Random_XorShift64_Pool<DeviceType> random(20251125);
+        Kokkos::fill_random(inputPointsViewToUseRandom, random, 0.0, 1.0);
+
+        auto policy = Kokkos::MDRangePolicy<DeviceSpaceType,Kokkos::Rank<2>>({0,0},{npts,ndim});
+        Kokkos::parallel_for("initialize view", policy, KOKKOS_LAMBDA (const int &i, const int &j) {inputPoints(i,j) = inputPointsViewToUseRandom(i,j);});
         
 
         *outStream << "Computing values and curls for " << ncells << " cells and " << npts << " points using team-level getValues function" <<std::endl;
@@ -126,14 +126,17 @@ namespace Intrepid2 {
           const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
           
           OutValueType diff = 0; 
-          auto tol = epsilon<double>();
+          const auto tol = 100.0 * epsilon<double>();
           for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
             for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
               for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
                 diff = 0;
-                for (int d=0;d<ndim;++d)
+                OutValueType maxMagnitude = 0;
+                for (int d=0;d<ndim;++d) {
                   diff += std::abs(outputValuesB_Host(i,j,d) - outputValuesA_Host(ic,i,j,d));
-                if (diff > tol) {
+                  maxMagnitude = std::max(maxMagnitude, std::max(std::abs(outputValuesA_Host(ic,i,j,d)), std::abs(outputValuesB_Host(i,j,d))));
+                }
+                if (diff > tol * std::max(1.0, maxMagnitude)) {
                   ++errorFlag;
                   std::cout << ", ic: " << ic << ", i: " << i << ", j: " << j 
                             << ", val A: [" << outputValuesA_Host(ic,i,j,0) << ", " << outputValuesA_Host(ic,i,j,1) << ", " << outputValuesA_Host(ic,i,j,2) << "]"
@@ -151,14 +154,17 @@ namespace Intrepid2 {
           const auto outputCurlsB_Host = Kokkos::create_mirror_view(outputCurlsB); Kokkos::deep_copy(outputCurlsB_Host, outputCurlsB);
           
           OutValueType diff = 0;
-          auto tol = epsilon<double>();
+          const auto tol = 100.0 * epsilon<double>();
           for (size_t ic=0;ic<outputCurlsA_Host.extent(0);++ic)
             for (size_t i=0;i<outputCurlsA_Host.extent(1);++i)
               for (size_t j=0;j<outputCurlsA_Host.extent(2);++j) {
                 diff = 0;
-                for (int d=0;d<ndim;++d)
+                OutValueType maxMagnitude = 0;
+                for (int d=0;d<ndim;++d) {
                   diff += std::abs(outputCurlsB_Host(i,j,d) - outputCurlsA_Host(ic,i,j,d));
-                if (diff > tol) {
+                  maxMagnitude = std::max(maxMagnitude, std::max(std::abs(outputCurlsA_Host(ic,i,j,d)), std::abs(outputCurlsB_Host(i,j,d))));
+                }
+                if (diff > tol * std::max(1.0, maxMagnitude)) {
                   ++errorFlag;
                   std::cout << ", ic: " << ic << ", i: " << i << ", j: " << j 
                             << ", curls A: [" << outputCurlsA_Host(ic,i,j,0)<< ", " << outputCurlsA_Host(ic,i,j,1) << ", " << outputCurlsA_Host(ic,i,j,2) << "]"

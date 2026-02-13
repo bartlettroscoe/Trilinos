@@ -82,6 +82,7 @@ private:
   enum : int { LDL_nopiv = 0, Cholesky = 1, LDL = 2, SymLU = 3, LU = 4 };
 
   // ** solver mode
+  ordinal_type _method_setup;
   ordinal_type _method;
 
   // ** ordering options
@@ -168,6 +169,10 @@ private:
   ordinal_type _variant;             // algorithmic variant in levelset 0: naive, 1: invert diagonals
   ordinal_type _nstreams;            // on cuda, multi streams are used
 
+  bool _shift_diag;                  // shift diagonal with small perturbation
+  ordinal_type_array _dj;
+  value_type_array _dv;
+
   mag_type _pivot_tol;               // tolerance for tiny pivot perturbation
   bool _store_transpose;             // store transpose explicitly
 
@@ -193,7 +198,8 @@ public:
   void setSmallProblemThresholdsize(const ordinal_type small_problem_thres = 1024);
   void setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric
                      const bool is_positive_definite);
-  void setSolutionMethod(const int method); /// 1 - cholesky, 2 - LDL, 3 - LU
+  void setSolutionMethod(const int method);      /// 1 - cholesky, 2 - LDL, 3 - LU
+  void setFactorizationMethod(const int method); /// 1 - cholesky, 2 - LDL, 3 - LU
 
   ///
   /// Graph options
@@ -222,6 +228,7 @@ public:
 
   void setPivotTolerance(const mag_type pivot_tol);
   void useNoPivotTolerance();
+  void shiftDiagonal();
   void useDefaultPivotTolerance();
   void storeExplicitTranspose(bool flag);
 
@@ -440,6 +447,7 @@ public:
   int initialize();
 
   int factorize(const value_type_array &ax);
+  int factorize(const value_type_array &ax, ordinal_type method);
   int factorize_small_host(const value_type_array &ax);
 
   int solve(const value_type_matrix &x, const value_type_matrix &b, const value_type_matrix &t);
