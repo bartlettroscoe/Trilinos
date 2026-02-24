@@ -6,19 +6,16 @@
 [Mailing List](https://trilinos.github.io/mail_lists.html) |
 [Packages](http://trilinos.github.io/packages.html)
 
-
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/trilinos/Trilinos/badge)](https://securityscorecards.dev/viewer/?uri=github.com/trilinos/Trilinos)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9452/badge)](https://www.bestpractices.dev/projects/9452)
 [![CodeFactor](https://www.codefactor.io/repository/github/trilinos/trilinos/badge)](https://www.codefactor.io/repository/github/trilinos/trilinos)
 ![GitHub contributors](https://img.shields.io/github/contributors/trilinos/Trilinos)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/w/trilinos/Trilinos)
 
-
 The Trilinos Project is an effort to develop algorithms and enabling
 technologies within an object-oriented software framework for the solution of
 large-scale, complex multi-physics engineering and scientific problems. A
 unique design feature of Trilinos is its focus on packages.
-
 
 ### Documentation
 
@@ -45,7 +42,6 @@ unique design feature of Trilinos is its focus on packages.
 
 - If you have questions, please submit an issue on the Trilinos repo 
   [GitHub Issues page](https://github.com/trilinos/Trilinos/issues).
-
 
 ### License
 
